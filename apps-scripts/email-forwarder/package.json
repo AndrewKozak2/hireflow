@@ -1,0 +1,17 @@
+{
+  "name": "email-forwarder",
+  "version": "1.0.0",
+  "description": "Forward emails to HireFlow backend",
+  "scripts": {
+    "login": "clasp login",
+    "logout": "clasp logout",
+    "push": "clasp push",
+    "watch": "clasp push --watch",
+    "deploy": "clasp deploy"
+  },
+  "devDependencies": {
+    "@google/clasp": "^2.4.2",
+    "@types/google-apps-script": "^1.0.83",
+    "typescript": "^5.0.0"
+  }
+}

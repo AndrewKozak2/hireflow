@@ -1,0 +1,74 @@
+.card {
+  border: 1px solid var(--mantine-color-gray-2);
+  background-color: var(--mantine-color-white);
+}
+
+.title {
+  letter-spacing: 0.06em;
+}
+
+.scrollContainer,
+.textareaWrapper {
+  position: relative;
+}
+
+.notesList {
+  max-height: 19rem;
+  overflow-y: auto;
+  padding-right: var(--mantine-spacing-md);
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+}
+
+.notesList::-webkit-scrollbar {
+  width: 0;
+  height: 0;
+}
+
+.noteItem {
+  border: 1px solid var(--mantine-color-gray-2);
+  border-radius: var(--mantine-radius-md);
+  background-color: var(--mantine-color-gray-0);
+}
+
+.scrollTrack {
+  position: absolute;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  width: 0.5rem;
+  border-radius: 9999px;
+  background-color: var(--mantine-color-gray-1);
+  pointer-events: none;
+  overflow: hidden;
+}
+
+.textareaScrollTrack {
+  top: 0.375rem;
+  right: 0.375rem;
+  bottom: 0.375rem;
+}
+
+.scrollThumb {
+  position: absolute;
+  top: var(--scroll-thumb-top);
+  left: 0;
+  width: 100%;
+  height: var(--scroll-thumb-height);
+  border-radius: 9999px;
+  background-color: var(--mantine-color-gray-3);
+}
+
+.notesInput {
+  font-size: var(--mantine-font-size-sm);
+  overflow-y: auto;
+  resize: vertical;
+  padding-right: 1.5rem;
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+}
+
+.notesInput::-webkit-scrollbar {
+  width: 0;
+  height: 0;
+}

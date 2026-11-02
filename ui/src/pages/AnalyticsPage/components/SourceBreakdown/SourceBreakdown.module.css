@@ -1,0 +1,9 @@
+.wrapper {
+  display: flex;
+  gap: 40px;
+  align-items: flex-start;
+}
+.skeleton {
+  padding: 20px;
+  color: #999;
+}

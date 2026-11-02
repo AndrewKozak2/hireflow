@@ -1,0 +1,12 @@
+.shellHeader {
+  border-bottom: 1px solid #f1f3f5;
+  background-color: #ffffff;
+}
+
+.shellNavbar {
+  border-right: 1px solid #f1f3f5;
+}
+
+.shellMain {
+  background-color: var(--mantine-color-gray-0);
+}

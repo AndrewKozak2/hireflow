@@ -1,0 +1,90 @@
+.pageWrapper {
+  min-height: 100vh;
+  background-color: #dde9f4;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+h1.label {
+  font-size: 150px;
+  font-weight: 900;
+  line-height: 1;
+  text-align: center;
+  color: var(--mantine-color-gray-3);
+}
+
+.eyesContainer {
+  display: flex;
+  justify-content: center;
+  gap: 50px;
+}
+
+.eyeWrapper {
+  position: relative;
+  width: 110px;
+  height: 120px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.eyeShapeLeft,
+.eyeShapeRight {
+  position: absolute;
+  width: 100%;
+  height: 100%;
+  background-color: white;
+  border-radius: 50%;
+  box-shadow: inset 0px 4px 8px rgba(0, 0, 0, 0.1);
+}
+
+.eyeShapeLeft {
+  transform: rotate(45deg);
+}
+.eyeShapeRight {
+  transform: rotate(-45deg);
+}
+
+.wrinkle {
+  position: absolute;
+  width: 100px;
+  height: 70px;
+  border-bottom: 3px solid #ffffff;
+  border-radius: 50%;
+  bottom: -15px;
+  left: 5px;
+  pointer-events: none;
+}
+
+.deadPupil {
+  position: relative;
+  width: 25px;
+  height: 25px;
+  z-index: 2;
+}
+
+.deadPupil::before,
+.deadPupil::after {
+  content: "";
+  position: absolute;
+  width: 25px;
+  height: 4px;
+  background-color: #1a1b1e;
+  border-radius: 2px;
+  top: 50%;
+  left: 50%;
+}
+
+.deadPupil::before {
+  transform: translate(-50%, -50%) rotate(45deg);
+}
+.deadPupil::after {
+  transform: translate(-50%, -50%) rotate(-45deg);
+}
+
+@media (max-width: 48em) {
+  .label {
+    font-size: 80px;
+  }
+}

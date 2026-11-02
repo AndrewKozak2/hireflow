@@ -1,0 +1,10 @@
+.row {
+  cursor: pointer;
+  border-bottom: 1px solid var(--mantine-color-gray-2);
+  padding: 14px 0;
+  transition: background 0.12s;
+}
+
+.row:hover {
+  background-color: var(--mantine-color-gray-0);
+}

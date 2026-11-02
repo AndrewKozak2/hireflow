@@ -1,0 +1,49 @@
+.wrapperDonut {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  height: 100%;
+}
+.wrapperToolTip {
+  padding: 6px 8px;
+  font-size: 12px;
+  background: white;
+  border: 1px solid #eee;
+  border-radius: 6px;
+  min-width: 140px;
+}
+.wrapperForDotAndNameToolTip {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+.dotInToolTip {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+}
+
+.wrapperForLegend {
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  height: 100%;
+}
+
+.wrapperForOneItemInLegend {
+  display: flex;
+  justify-content: space-between;
+  cursor: pointer;
+}
+
+.wrapperInItemLegendDotAndName {
+  display: flex;
+  gap: 6px;
+  align-items: center;
+}
+
+.dotInLegendItem {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+}

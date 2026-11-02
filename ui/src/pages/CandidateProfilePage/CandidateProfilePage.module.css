@@ -1,0 +1,40 @@
+.backLink {
+  width: fit-content;
+}
+
+.backLink:hover {
+  color: var(--mantine-color-gray-8);
+}
+
+.cardLabel {
+  letter-spacing: 0.06em;
+}
+
+.tabsList {
+  gap: 1.5rem;
+}
+
+.tab {
+  padding: "10px 14px";
+  border-bottom: 2px solid transparent;
+  color: var(--mantine-color-gray-6);
+  transition:
+    color 150ms ease,
+    border-color 150ms ease;
+}
+
+.tabLabel {
+  color: inherit;
+  font-size: var(--mantine-font-size-sm);
+  font-weight: 500;
+}
+
+.tab:hover {
+  color: var(--mantine-color-gray-9);
+  background-color: transparent;
+}
+
+.tab[data-active] {
+  color: var(--mantine-color-indigo-7);
+  border-bottom-color: var(--mantine-color-indigo-7);
+}

@@ -1,0 +1,12 @@
+.tableWrapper {
+  width: 100%;
+  display: block;
+}
+
+.tableWrapper :global(thead th button) {
+  display: none;
+}
+
+.activeRow :global(td) {
+  background: rgb(213, 217, 238);
+}

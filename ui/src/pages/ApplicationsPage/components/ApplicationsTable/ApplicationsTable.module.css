@@ -1,0 +1,20 @@
+.table :global(.mrt-table-head-sort-button) {
+  display: none !important;
+}
+.clickableText {
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+.scrollContainer {
+  max-height: calc(100vh - 200px);
+  overflow-y: auto;
+
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+
+.scrollContainer::-webkit-scrollbar {
+  display: none;
+}

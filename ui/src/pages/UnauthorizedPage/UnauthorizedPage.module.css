@@ -1,0 +1,28 @@
+.root {
+  height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.errorLabel {
+  text-align: center;
+  font-weight: 900;
+  font-size: 120px;
+  line-height: 1;
+  color: var(--mantine-color-gray-3);
+  margin-bottom: var(--mantine-spacing-xl);
+}
+
+.title {
+  font-family: var(--mantine-font-family);
+  font-weight: 900;
+  text-align: center;
+}
+
+.description {
+  max-width: 500px;
+  margin: auto;
+  margin-top: var(--mantine-spacing-md);
+  margin-bottom: var(--mantine-spacing-xl);
+}

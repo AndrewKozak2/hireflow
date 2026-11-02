@@ -1,0 +1,23 @@
+.mantine-Button-root {
+  transition:
+    transform 150ms ease,
+    box-shadow 150ms ease,
+    background-color 150ms ease,
+    border-color 150ms ease;
+}
+
+.mantine-Button-root:hover {
+  transform: translateY(-1px);
+  box-shadow: var(--mantine-shadow-sm);
+}
+
+.mantine-Button-root:active {
+  transform: translateY(0);
+  box-shadow: none;
+}
+
+.mantine-Button-root[data-disabled],
+.mantine-Button-root:disabled {
+  transform: none;
+  box-shadow: none;
+}

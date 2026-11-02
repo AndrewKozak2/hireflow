@@ -1,0 +1,6 @@
+export type LlmErrorCode =
+  | "LLM_CONFIG_ERROR"
+  | "LLM_COMPLETION_ERROR"
+  | "LLM_TIMEOUT"
+  | "LLM_INVALID_JSON"
+  | "LLM_SCHEMA_VALIDATION_ERROR";

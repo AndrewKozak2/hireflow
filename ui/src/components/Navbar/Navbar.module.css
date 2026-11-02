@@ -1,0 +1,97 @@
+.wrapper {
+  height: 100vh;
+  display: flex;
+  flex-direction: column;
+  padding: 16px 12px;
+  gap: 4px;
+  color: #5d6b80;
+}
+.logoGroup {
+  padding: 0 10px 16px;
+  cursor: pointer;
+}
+.logoIcon {
+  width: 29px;
+  height: 29px;
+  background: linear-gradient(135deg, #6366f1 0%, #4f46e5 100%);
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: white;
+  font-weight: 700;
+  font-size: 14px;
+}
+
+.brandTitle {
+  font-size: 24px;
+  color: #1a1b1e;
+  letter-spacing: -0.5px;
+}
+
+.navStack {
+  flex: 1;
+}
+
+.badge {
+  background-color: #fa5252;
+  color: white;
+  font-size: 11px;
+  font-weight: 700;
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  line-height: 1;
+}
+
+.navRoot {
+  border-radius: 8px;
+  padding: 8px 10px;
+  color: #64748b;
+  transition: all 0.15s ease;
+  background-color: transparent;
+}
+.navRoot:hover {
+  background-color: #f8f9fa;
+  color: #1a1b1e;
+}
+
+.navRoot[data-active] {
+  background-color: #f0f3ff;
+  color: #4f46e5;
+  font-weight: 500;
+}
+
+.navSection {
+  margin-right: 10px;
+}
+
+.userFooter {
+  padding-top: 20px;
+  border-top: 1px solid #f1f3f5;
+  margin-top: 20px;
+}
+
+.userName {
+  color: #1a1b1e;
+  line-height: 1.2;
+}
+
+.userRole {
+  text-transform: capitalize;
+  font-size: 11px;
+}
+
+.logoutAction {
+  color: #64748b;
+  border-radius: 8px;
+  transition: all 0.2s ease;
+}
+
+.logoutAction:hover {
+  background-color: #fef2f2;
+  color: #fa5252;
+}

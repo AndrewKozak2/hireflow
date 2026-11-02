@@ -1,0 +1,103 @@
+.row {
+  transition: background-color 0.2s ease;
+}
+
+.cellFirst {
+  padding: 16px 24px;
+  position: relative;
+}
+
+.row > td:first-child::before {
+  content: "";
+  position: absolute;
+  left: 8px;
+  top: 25%;
+  bottom: 25%;
+  width: 4px;
+  border-radius: 4px;
+  transition: background-color 0.2s ease;
+  z-index: 1;
+}
+
+.row[data-color="orange"] > td:first-child::before {
+  background-color: var(--mantine-color-orange-6);
+}
+.row[data-color="blue"] > td:first-child::before {
+  background-color: var(--mantine-color-blue-6);
+}
+.row[data-color="green"] > td:first-child::before {
+  background-color: var(--mantine-color-green-6);
+}
+.row[data-color="gray"] > td:first-child::before {
+  background-color: var(--mantine-color-gray-4);
+}
+.row[data-color="red"] > td:first-child::before {
+  background-color: var(--mantine-color-red-6);
+}
+.row[data-color="yellow"] > td:first-child::before {
+  background-color: var(--mantine-color-yellow-6);
+}
+
+.row[data-color="orange"]:hover {
+  background-color: var(--mantine-color-orange-0);
+}
+.row[data-color="blue"]:hover {
+  background-color: var(--mantine-color-blue-0);
+}
+.row[data-color="green"]:hover {
+  background-color: var(--mantine-color-green-0);
+}
+.row[data-color="gray"]:hover {
+  background-color: var(--mantine-color-gray-0);
+}
+.row[data-color="red"]:hover {
+  background-color: var(--mantine-color-red-0);
+}
+.row[data-color="yellow"]:hover {
+  background-color: var(--mantine-color-yellow-0);
+}
+
+.row[data-cancelled="true"] {
+  opacity: 0.6;
+}
+
+.tableContainer {
+  width: 100%;
+  overflow-x: auto;
+}
+
+.tablePaper {
+  overflow: hidden;
+  min-width: 72rem;
+}
+
+.table {
+  width: 100%;
+  --table-hover-color: var(--mantine-color-gray-0);
+}
+
+.tableHeader {
+  text-transform: uppercase;
+  font-size: var(--mantine-font-size-xs);
+  font-weight: 500;
+  letter-spacing: 0.5px;
+  color: var(--mantine-color-gray-6);
+  padding: 16px 24px;
+}
+.textRight {
+  text-align: right;
+}
+
+.cell {
+  padding: 16px 24px;
+}
+
+.jobTitle {
+  font-weight: 600;
+  cursor: pointer;
+  text-decoration: none;
+}
+
+.jobTitle:hover {
+  text-decoration: underline;
+}

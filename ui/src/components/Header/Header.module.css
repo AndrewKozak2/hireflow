@@ -1,0 +1,17 @@
+.pageTitle {
+  font-size: 24px;
+  font-weight: 500;
+  color: #1a1b1e;
+  letter-spacing: -0.5px;
+}
+
+.rightSection {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.userAvatar {
+  cursor: pointer;
+  border: 2px solid transparent;
+}
