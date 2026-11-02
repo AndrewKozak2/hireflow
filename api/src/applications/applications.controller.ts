@@ -373,6 +373,12 @@ export class ApplicationsController {
   @Post(":id/run-screening")
   @Roles(UserRole.ADMIN, UserRole.RECRUITER)
   @ApiOperation({ summary: "Run AI screening using existing candidate CV" })
+  @ApiResponse({ status: 404, description: "Not Found" })
+  @ApiResponse({
+    status: 422,
+    description:
+      "Unprocessable Entity: candidate has CVs, but none is a readable PDF, DOCX or TXT",
+  })
   runScreeningFromExistingCv(@Param("id", ParseUUIDPipe) id: string) {
     return this.applicationsService.runScreeningFromExistingCv(id);
   }
