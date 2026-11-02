@@ -1,0 +1,27 @@
+Marta Levchenko-Example
+Senior Backend Engineer
+Email: marta.levchenko@example.com | Lviv, Ukraine (remote)
+
+SUMMARY
+Backend engineer with 7 years of commercial experience building Node.js and TypeScript services for fintech and logistics products. Comfortable owning a service end to end, from API design to production on-call.
+
+EXPERIENCE
+Senior Backend Engineer — Northwind Payments (fictional), 2021–present
+- Lead developer of a NestJS payment-orchestration service (TypeScript, PostgreSQL, Redis), ~2,000 requests per second at peak.
+- Designed the PostgreSQL schema for ledger entries; wrote migrations with TypeORM and cut the slowest reporting query from 9 s to 300 ms with partial indexes and query rewrites.
+- Documented public REST APIs with OpenAPI; ran API design reviews for three teams.
+- Moved builds to Docker and GitHub Actions; introduced blue-green deployments.
+
+Backend Developer — CargoLink (fictional), 2018–2021
+- Express.js and TypeScript microservices for shipment tracking.
+- PostgreSQL and MongoDB; integration with carrier REST and SOAP APIs.
+- Jest unit and integration tests, ~85% coverage on core services.
+
+EDUCATION
+Master of Computer Science, Lviv Polytechnic National University, 2018
+
+SKILLS
+TypeScript, Node.js, NestJS, Express, PostgreSQL, TypeORM, Redis, Docker, GitHub Actions, REST, OpenAPI, Jest, AWS (ECS, RDS)
+
+LANGUAGES
+Ukrainian (native), English (C1)

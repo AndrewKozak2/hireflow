@@ -1,0 +1,23 @@
+Taras Melnyk-Example
+Python Backend Developer
+taras.melnyk@example.com | Ivano-Frankivsk
+
+Profile
+Backend developer with 5 years of Python and Django, a lot of it around reporting and data pipelines. Strong SQL. Interested in moving closer to analytics.
+
+Experience
+Backend Developer — InsightHub (fictional), 2022–present
+- Django REST Framework APIs for a reporting product; PostgreSQL with heavy use of window functions and CTEs.
+- ETL jobs in Python with pandas; nightly aggregates for customer dashboards.
+- Docker, GitLab CI.
+
+Python Developer — DataWorks (fictional), 2020–2022
+- Django web apps; Celery workers; MySQL.
+
+Education
+Bachelor of Software Engineering, Ivano-Frankivsk National Technical University, 2020
+
+Skills
+Python, Django, Django REST Framework, pandas, PostgreSQL, MySQL, SQL, Celery, Docker, GitLab CI, REST
+
+English: B2

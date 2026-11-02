@@ -1,0 +1,23 @@
+Bohdan Lysenko-Example
+Digital Marketing Specialist → aspiring Data Analyst
+bohdan.lysenko@example.com
+
+Summary
+Four years in performance marketing. I work with numbers every day and want to move into data analysis full time. Completed an online SQL course in 2026.
+
+Experience
+Digital Marketing Specialist — TravelNow (fictional), 2022–present
+- Ran Google Ads and Meta campaigns with a monthly budget of $40k.
+- Weekly reports in Excel (pivot tables, VLOOKUP) and Google Analytics 4.
+- Ran landing-page split tests in Google Optimize and reported the results.
+
+Marketing Assistant — Retail Group (fictional), 2021–2022
+
+Education
+Bachelor of Marketing, Kyiv National Economic University, 2021
+Online course: "SQL for Beginners" (fictional provider), 2026
+
+Skills
+Excel, Google Analytics 4, Google Ads, Looker Studio, SQL (basic), presentations
+
+English: B2
