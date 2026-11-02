@@ -146,3 +146,6 @@ minio-data/
 
 # Apps Script project binding (per developer)
 .clasp.json
+
+# Claude Code / learn-loop local config (per developer)
+.claude/

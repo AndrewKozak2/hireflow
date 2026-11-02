@@ -171,6 +171,32 @@ export class EmailIngestService {
           attachments: this.toApplicationEmailAttachments(attachmentManifest),
         });
 
+        // The LLM's isApplication means "has a CV", so a false is only a veto: any
+        // cheap signal that this may still be an application lets the email through.
+        const applicationSignals = this.getApplicationSignals(
+          analysis,
+          attachmentManifest,
+        );
+
+        if (
+          analysis.isApplication === false &&
+          applicationSignals.length === 0
+        ) {
+          event.status = EmailIngestionStatus.NOT_APPLICATION;
+          event.classificationResult = {
+            ...analysis,
+            gate: { decision: "not_application", signals: applicationSignals },
+          };
+          await this.emailIngestionEventRepository.save(event);
+          continue;
+        }
+
+        if (analysis.isApplication === null) {
+          this.logger.warn(
+            `[EmailIngest] Email ${event.id} could not be classified; processing it as an application`,
+          );
+        }
+
         if (!analysis.email) {
           const emailMatch = event.sender.match(/<([^>]+)>/);
           analysis.email = emailMatch ? emailMatch[1] : event.sender.trim();
@@ -186,13 +212,7 @@ export class EmailIngestService {
           }
         }
         if (analysis.links && analysis.links.length > 0) {
-          const cvLinks = analysis.links.filter(
-            (link) =>
-              link.toLowerCase().includes(".pdf") ||
-              link.toLowerCase().includes(".doc") ||
-              link.toLowerCase().includes("cv") ||
-              link.toLowerCase().includes("resume"),
-          );
+          const cvLinks = analysis.links.filter((link) => this.isCvLink(link));
 
           for (const link of cvLinks) {
             try {
@@ -273,14 +293,6 @@ export class EmailIngestService {
           );
         }
 
-        /* if (!analysis.isApplication) {
-          event.status = EmailIngestionStatus.NOT_APPLICATION;
-          event.classificationResult = analysis;
-          await this.emailIngestionEventRepository.save(event);
-
-          continue;
-        }
-*/
         const candidateId = await this.resolveCandidate(analysis);
         await this.linkAttachmentsToCandidate(candidateId, attachmentManifest);
         const application = await this.createUnassignedApplication(
@@ -419,7 +431,10 @@ export class EmailIngestService {
         event.candidateId = candidateId;
         event.applicationId = application.id;
         event.status = EmailIngestionStatus.CANDIDATE_RESOLVED;
-        event.classificationResult = analysis;
+        event.classificationResult = {
+          ...analysis,
+          gate: { decision: "application", signals: applicationSignals },
+        };
         await this.emailIngestionEventRepository.save(event);
       } catch (error) {
         event.status = EmailIngestionStatus.FAILED;
@@ -451,6 +466,56 @@ export class EmailIngestService {
       });
       await this.candidateCvRepository.save(cv);
     }
+  }
+
+  private getApplicationSignals(
+    analysis: ParsedApplicationEmailCandidateInfo,
+    attachments: Record<string, unknown>[],
+  ): string[] {
+    const signals: string[] = [];
+    const links = analysis.links ?? [];
+
+    if (
+      attachments.some((attachment) => this.isDocumentAttachment(attachment))
+    ) {
+      signals.push("document_attachment");
+    }
+    if (links.some((link) => this.isCvLink(link))) {
+      signals.push("cv_link");
+    }
+    // Only personal profiles: newsletters carry linkedin.com/company/... footers.
+    if (links.some((link) => link.toLowerCase().includes("linkedin.com/in/"))) {
+      signals.push("linkedin_link");
+    }
+    if (analysis.appliedRole?.trim()) {
+      signals.push("applied_role");
+    }
+
+    return signals;
+  }
+
+  private isDocumentAttachment(attachment: Record<string, unknown>): boolean {
+    const filename = this.getAttachmentFilename(attachment).toLowerCase();
+    const contentType =
+      typeof attachment.contentType === "string"
+        ? attachment.contentType.toLowerCase()
+        : "";
+
+    return (
+      [".pdf", ".docx", ".doc"].some((ext) => filename.endsWith(ext)) ||
+      [
+        "application/pdf",
+        "application/msword",
+        "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+      ].includes(contentType)
+    );
+  }
+
+  private isCvLink(link: string): boolean {
+    const lowerLink = link.toLowerCase();
+    return [".pdf", ".doc", "cv", "resume"].some((marker) =>
+      lowerLink.includes(marker),
+    );
   }
 
   private toApplicationEmailAttachments(
