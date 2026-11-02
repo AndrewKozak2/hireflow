@@ -1,4 +1,3 @@
-import * as mammoth from "mammoth";
 import {
   Injectable,
   ConflictException,
@@ -49,8 +48,13 @@ import { AiRecommendation } from "./enums/ai-recommendation.enum";
 import { GenerateScoreCardService } from "../llm/tasks/generate-score-card/generate-score-card.service";
 import { InterviewNoteInput } from "../llm/tasks/generate-score-card/interfaces/generate-score-card.interface";
 import { ScoreCardRecommendation } from "./enums/score-card-recommendation.enum";
-// eslint-disable-next-line @typescript-eslint/no-require-imports
-import pdf = require("pdf-parse");
+import {
+  detectCvTextKind,
+  extractCvText,
+  isUnsupportedCvFilename,
+} from "../shared/utils/cv-text.utils";
+
+const RESCREEN_CV_LOOKBACK = 5;
 
 @Injectable()
 export class ApplicationsService {
@@ -513,31 +517,18 @@ export class ApplicationsService {
         `[ManualUpload] Starting CV parsing: ${originalFilename}`,
       );
 
-      let extractedText = "";
-      const filename = file.originalname.toLowerCase();
-      const mimeType = file.mimetype.toLowerCase();
-
-      if (mimeType === "application/pdf" || filename.endsWith(".pdf")) {
-        const result = await pdf(file.buffer);
-        extractedText = result.text;
-      } else if (
-        filename.endsWith(".docx") ||
-        mimeType.includes("wordprocessingml")
-      ) {
-        const result = await mammoth.extractRawText({ buffer: file.buffer });
-        extractedText = result.value;
-      } else if (filename.endsWith(".txt") || mimeType.startsWith("text/")) {
-        extractedText = file.buffer.toString("utf8");
-      }
-
-      extractedText = extractedText.trim();
+      const textKind = detectCvTextKind({
+        filename: originalFilename,
+        contentType: file.mimetype,
+        buffer: file.buffer,
+      });
+      const extractedText = textKind
+        ? await extractCvText(file.buffer, textKind)
+        : "";
 
       if (extractedText) {
         const parsedCv = await this.llmClientService.runTask(parseCvTask, {
-          extractedText:
-            extractedText.length > 40000
-              ? extractedText.slice(0, 40000)
-              : extractedText,
+          extractedText,
         });
 
         if (parsedCv) {
@@ -619,33 +610,29 @@ export class ApplicationsService {
   async runScreeningFromExistingCv(applicationId: string) {
     const application = await this.findOne(applicationId);
 
-    const latestCv = await this.candidateCvRepository.findOne({
+    const candidateCvs = await this.candidateCvRepository.find({
       where: { candidateId: application.candidateId },
       order: { createdAt: "DESC" },
+      take: RESCREEN_CV_LOOKBACK,
     });
 
-    if (!latestCv || !latestCv.fileUrl) {
+    if (candidateCvs.length === 0) {
       this.logger.warn(
         `No existing CV found for candidate ${application.candidateId}`,
       );
       return application;
     }
 
-    try {
-      this.logger.log(
-        `[Cross-Vacancy] Downloading existing CV for AI Screening...`,
+    const extractedText = await this.extractTextFromStoredCvs(candidateCvs);
+    if (!extractedText) {
+      throw new UnprocessableEntityException(
+        "No readable CV (PDF, DOCX or TXT) found for this candidate",
       );
-      const stream = await this.storageService.download(latestCv.fileUrl);
-      const chunks: Buffer[] = [];
-      for await (const chunk of stream) {
-        chunks.push(Buffer.isBuffer(chunk) ? chunk : Buffer.from(chunk));
-      }
-      const buffer = Buffer.concat(chunks);
+    }
 
-      const extractedText = (await pdf(buffer)).text;
-
+    try {
       const parsedCv = await this.llmClientService.runTask(parseCvTask, {
-        extractedText: extractedText.substring(0, 100000),
+        extractedText,
       });
 
       if (application.job && parsedCv) {
@@ -681,6 +668,40 @@ export class ApplicationsService {
     }
 
     return this.findOne(applicationId);
+  }
+
+  // Email ingestion stores every attachment (logos, cover letters) as a CV, so
+  // the newest row is not necessarily a readable CV: use the first one that is.
+  private async extractTextFromStoredCvs(
+    cvs: CandidateCv[],
+  ): Promise<string | null> {
+    for (const cv of cvs) {
+      if (!cv.fileUrl || isUnsupportedCvFilename(cv.originalFilename)) {
+        continue;
+      }
+
+      try {
+        const stream = await this.storageService.download(cv.fileUrl);
+        const chunks: Buffer[] = [];
+        for await (const chunk of stream as AsyncIterable<Buffer | string>) {
+          chunks.push(Buffer.isBuffer(chunk) ? chunk : Buffer.from(chunk));
+        }
+        const buffer = Buffer.concat(chunks);
+
+        const textKind = detectCvTextKind({
+          filename: cv.originalFilename,
+          buffer,
+        });
+        const text = textKind ? await extractCvText(buffer, textKind) : "";
+        if (text) return text;
+      } catch (e) {
+        this.logger.warn(
+          `[Cross-Vacancy] Failed to read CV ${cv.originalFilename}: ${e}`,
+        );
+      }
+    }
+
+    return null;
   }
 
   async sendEmail(id: string, dto: SendEmailDto, actorId: string) {
