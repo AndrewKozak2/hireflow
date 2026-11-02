@@ -1,0 +1,24 @@
+Viktor Zaitsev-Example
+DevOps Engineer
+viktor.zaitsev@example.com | Zaporizhzhia / remote
+
+Summary
+DevOps engineer with 5 years of experience. I keep services running and pipelines fast. I write internal tooling in Node.js and Bash, and I'd like to move to backend development.
+
+Experience
+DevOps Engineer — StreamCast (fictional), 2022–present
+- Kubernetes (EKS) clusters, Helm charts, Terraform for AWS.
+- Docker images and GitHub Actions pipelines for 30+ services, most of them Node.js and TypeScript.
+- Wrote a small Express-based internal API for deployment metadata, with PostgreSQL.
+- On-call rotation; Prometheus and Grafana alerting.
+
+System Administrator — HostPro (fictional), 2020–2022
+- Linux servers, Nginx, MySQL backups.
+
+Education
+Bachelor in Computer Systems, Zaporizhzhia Polytechnic, 2020
+
+Skills
+Docker, Kubernetes, Helm, Terraform, AWS, GitHub Actions, Bash, Node.js, TypeScript (basic), PostgreSQL, Prometheus, Grafana, Linux
+
+English: B2

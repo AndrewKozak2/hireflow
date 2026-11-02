@@ -1,0 +1,19 @@
+Yurii Kovalenko-Example
+Junior Frontend Developer
+yurii.kovalenko@example.com
+
+I finished a 6-month frontend bootcamp in 2026 and I'm looking for my first job in IT. Before that I worked 4 years as a sales manager.
+
+Projects
+- Weather app — React (hooks), fetches a public REST API, deployed on Netlify.
+- Personal portfolio — HTML, CSS (flexbox), vanilla JavaScript, responsive.
+- To-do list — React + localStorage; tried Redux in a branch.
+
+Bootcamp: Frontend Developer course (fictional "CodeStart Academy"), 2026
+- HTML, CSS, JavaScript, React basics, Git, a little TypeScript at the end.
+
+Work experience
+Sales Manager, AutoParts Market (fictional), 2021–2025
+
+Skills: HTML, CSS, JavaScript, React (basic), Git, Figma (basic)
+English: B1

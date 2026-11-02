@@ -1,0 +1,21 @@
+[
+  { "cvId": "cv-01", "jobId": "job-backend-node", "recommendation": null, "score": null, "labeller": null, "labelledAt": null, "notes": "" },
+  { "cvId": "cv-02", "jobId": "job-backend-node", "recommendation": null, "score": null, "labeller": null, "labelledAt": null, "notes": "" },
+  { "cvId": "cv-03", "jobId": "job-backend-node", "recommendation": null, "score": null, "labeller": null, "labelledAt": null, "notes": "" },
+  { "cvId": "cv-06", "jobId": "job-backend-node", "recommendation": null, "score": null, "labeller": null, "labelledAt": null, "notes": "" },
+  { "cvId": "cv-09", "jobId": "job-backend-node", "recommendation": null, "score": null, "labeller": null, "labelledAt": null, "notes": "" },
+  { "cvId": "cv-11", "jobId": "job-backend-node", "recommendation": null, "score": null, "labeller": null, "labelledAt": null, "notes": "" },
+  { "cvId": "cv-13", "jobId": "job-backend-node", "recommendation": null, "score": null, "labeller": null, "labelledAt": null, "notes": "" },
+  { "cvId": "cv-14", "jobId": "job-backend-node", "recommendation": null, "score": null, "labeller": null, "labelledAt": null, "notes": "" },
+  { "cvId": "cv-04", "jobId": "job-frontend-react", "recommendation": null, "score": null, "labeller": null, "labelledAt": null, "notes": "" },
+  { "cvId": "cv-05", "jobId": "job-frontend-react", "recommendation": null, "score": null, "labeller": null, "labelledAt": null, "notes": "" },
+  { "cvId": "cv-06", "jobId": "job-frontend-react", "recommendation": null, "score": null, "labeller": null, "labelledAt": null, "notes": "" },
+  { "cvId": "cv-12", "jobId": "job-frontend-react", "recommendation": null, "score": null, "labeller": null, "labelledAt": null, "notes": "" },
+  { "cvId": "cv-15", "jobId": "job-frontend-react", "recommendation": null, "score": null, "labeller": null, "labelledAt": null, "notes": "" },
+  { "cvId": "cv-07", "jobId": "job-data-analyst", "recommendation": null, "score": null, "labeller": null, "labelledAt": null, "notes": "" },
+  { "cvId": "cv-08", "jobId": "job-data-analyst", "recommendation": null, "score": null, "labeller": null, "labelledAt": null, "notes": "" },
+  { "cvId": "cv-09", "jobId": "job-data-analyst", "recommendation": null, "score": null, "labeller": null, "labelledAt": null, "notes": "" },
+  { "cvId": "cv-04", "jobId": "job-qa-automation", "recommendation": null, "score": null, "labeller": null, "labelledAt": null, "notes": "" },
+  { "cvId": "cv-10", "jobId": "job-qa-automation", "recommendation": null, "score": null, "labeller": null, "labelledAt": null, "notes": "" },
+  { "cvId": "cv-11", "jobId": "job-qa-automation", "recommendation": null, "score": null, "labeller": null, "labelledAt": null, "notes": "" }
+]

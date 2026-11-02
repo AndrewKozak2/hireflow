@@ -1,0 +1,23 @@
+Oleh Tkachuk-Example
+Node.js Developer
+oleh.tkachuk@example.com | Kyiv
+
+About me
+JavaScript/Node.js developer with 3 years of experience, mostly on e-commerce backends. Looking for a team where I can grow into a senior role.
+
+Work experience
+Node.js Developer, ShopBright (fictional) — 2022–present
+- REST APIs on Express for a catalogue and checkout, JavaScript, recently migrating modules to TypeScript.
+- MongoDB with Mongoose; some reporting queries in PostgreSQL maintained by another team.
+- Wrote Dockerfiles for local development; deployments handled by the DevOps team.
+
+Junior Web Developer, Studio Pixel (fictional) — 2021–2022
+- Small Node.js and PHP websites for local businesses.
+
+Education
+Bachelor in Software Engineering, National Aviation University, 2021
+
+Skills
+JavaScript, Node.js, Express, TypeScript (basic), MongoDB, Mongoose, PostgreSQL (basic), Docker, Git, REST
+
+English: B1

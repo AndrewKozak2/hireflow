@@ -1,0 +1,25 @@
+Kateryna Shevchuk-Example
+QA Engineer (manual → automation)
+kateryna.shevchuk@example.com | Lviv
+
+Summary
+QA engineer with 4 years in manual testing of web and mobile apps and 1 year writing automated UI tests with Cypress.
+
+Experience
+QA Engineer — HealthTrack (fictional), 2022–present
+- Manual regression and exploratory testing of a web app and an iOS app.
+- Since 2025: Cypress tests in JavaScript for the main user flows (~60 tests).
+- API checks in Postman collections.
+- Bugs and test cases in Jira and TestRail.
+
+Junior QA — GameForge (fictional), 2021–2022
+- Manual testing of mobile games.
+
+Education
+Bachelor of Applied Physics, Ivan Franko National University of Lviv, 2021
+ISTQB Foundation Level
+
+Skills
+Manual testing, test design, Cypress, JavaScript (basic), Postman, Jira, TestRail, SQL (basic)
+
+English: B2

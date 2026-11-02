@@ -1,0 +1,3 @@
+Roman Petrenko-Example
+Frontend developer. React, Vue, Angular. 7 years.
+roman.petrenko@example.com

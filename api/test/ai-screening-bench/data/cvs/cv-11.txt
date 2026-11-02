@@ -1,0 +1,23 @@
+Dmytro Ivanenko-Example
+Senior SDET
+dmytro.ivanenko@example.com | Remote
+
+Summary
+Software engineer in test with 6 years of automation experience. I build test frameworks that developers actually run.
+
+Experience
+Senior SDET — CloudDesk (fictional), 2022–present
+- Built a Playwright + TypeScript framework (UI and API layers), ~1,200 tests, parallel runs in GitHub Actions under 12 minutes.
+- Contract and API tests with Playwright request fixtures and Postman/Newman.
+- Flaky-test dashboard; test reporting to Jira via webhooks.
+
+QA Automation Engineer — RetailSoft (fictional), 2019–2022
+- Cypress and WebdriverIO suites in JavaScript; Jenkins pipelines.
+
+Education
+Bachelor of Computer Science, Chernivtsi National University, 2019
+
+Skills
+Playwright, Cypress, WebdriverIO, TypeScript, JavaScript, Node.js, Postman, Newman, GitHub Actions, Jenkins, Docker, Jira, SQL
+
+English: C1
