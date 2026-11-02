@@ -143,3 +143,6 @@ vite.config.ts.timestamp-*
 docker/minio-data/
 minio-data/
 
+
+# Apps Script project binding (per developer)
+.clasp.json
