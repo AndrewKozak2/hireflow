@@ -42,10 +42,38 @@ import {
 } from "src/llm/tasks/match-application-to-job/interfaces/match-application-to-job.interface";
 import { parseCvTask } from "src/llm/tasks/parse-cv/parse-cv.task";
 import { ParsedCvCandidateInfo } from "src/llm/tasks/parse-cv/interfaces/parse-cv.interface";
+import { buildCandidateUpdateFromCv } from "src/shared/utils/candidate-cv-enrichment.utils";
 import { AiScreeningService } from "../llm/tasks/ai-screening/ai-screening.service";
 import { AiRecommendation } from "../applications/enums/ai-recommendation.enum";
 
 const MAX_CV_TEXT_CHARS = 40_000;
+
+/**
+ * Sender addresses that never belong to the candidate: automated mailboxes and
+ * job boards that send "new response" notifications on the candidate's behalf.
+ */
+const NON_CANDIDATE_SENDER_LOCAL_PART =
+  /^(no-?reply|do-?not-?reply|notifications?|notify|mailer-daemon|postmaster|bounces?|robot|info|support|jobs?|careers?|hr|hiring|recruit(?:ing|ment)?|talent)([+._-].*)?$/i;
+const JOB_BOARD_DOMAINS = [
+  "work.ua",
+  "dou.ua",
+  "djinni.co",
+  "robota.ua",
+  "rabota.ua",
+  "linkedin.com",
+  "jooble.org",
+];
+
+type IdentitySource = "cv" | "email" | "sender" | null;
+
+export interface CandidateIdentity {
+  email: string | null;
+  phone: string | null;
+  candidateName: string | null;
+  links: string[];
+  emailSource: IdentitySource;
+  nameSource: IdentitySource;
+}
 
 @Injectable()
 export class EmailIngestService {
@@ -197,20 +225,6 @@ export class EmailIngestService {
           );
         }
 
-        if (!analysis.email) {
-          const emailMatch = event.sender.match(/<([^>]+)>/);
-          analysis.email = emailMatch ? emailMatch[1] : event.sender.trim();
-        }
-
-        if (!analysis.candidateName) {
-          const nameMatch = event.sender.match(/^"?(.*?)"?\s*</);
-
-          if (nameMatch && nameMatch[1].trim()) {
-            analysis.candidateName = nameMatch[1].trim();
-          } else {
-            analysis.candidateName = analysis.email.split("@")[0];
-          }
-        }
         if (analysis.links && analysis.links.length > 0) {
           const cvLinks = analysis.links.filter((link) => this.isCvLink(link));
 
@@ -293,8 +307,15 @@ export class EmailIngestService {
           );
         }
 
-        const candidateId = await this.resolveCandidate(analysis);
+        const identity = this.buildCandidateIdentity(
+          analysis,
+          parsedCv,
+          event.sender,
+        );
+        const candidateId = await this.resolveCandidate(identity);
         await this.linkAttachmentsToCandidate(candidateId, attachmentManifest);
+        // Save what the CV says about the candidate now, even when no job matches
+        await this.enrichCandidateFromCv(candidateId, parsedCv);
         const application = await this.createUnassignedApplication(
           candidateId,
           dbSource,
@@ -380,44 +401,11 @@ export class EmailIngestService {
 
               await this.applicationRepository.save(application);
 
-              if (
-                screeningResult.extractedSkills &&
-                screeningResult.extractedSkills.length > 0
-              ) {
-                const candidate = await this.candidateRepository.findOne({
-                  where: { id: candidateId },
-                });
-                if (candidate) {
-                  const updateData: Partial<Candidate> = {};
-
-                  const mergedSkills = [
-                    ...(candidate.skills || []),
-                    ...screeningResult.extractedSkills,
-                  ];
-                  updateData.skills = Array.from(new Set(mergedSkills));
-
-                  if (parsedCv?.phone && !candidate.phone) {
-                    updateData.phone = parsedCv.phone;
-                  }
-
-                  if (
-                    parsedCv?.links &&
-                    parsedCv.links.length > 0 &&
-                    !candidate.linkedinUrl
-                  ) {
-                    const linkedin = parsedCv.links.find((l) =>
-                      l.includes("linkedin.com"),
-                    );
-                    if (linkedin) {
-                      updateData.linkedinUrl = linkedin;
-                    }
-                  }
-                  await this.candidateRepository.update(
-                    candidate.id,
-                    updateData,
-                  );
-                }
-              }
+              await this.enrichCandidateFromCv(
+                candidateId,
+                null,
+                screeningResult.extractedSkills ?? [],
+              );
 
               this.logger.log(
                 `[EmailIngest] Screening finished for app ${application.id} with score ${screeningResult.matchPercentage}`,
@@ -434,6 +422,10 @@ export class EmailIngestService {
         event.classificationResult = {
           ...analysis,
           gate: { decision: "application", signals: applicationSignals },
+          identity: {
+            emailSource: identity.emailSource,
+            nameSource: identity.nameSource,
+          },
         };
         await this.emailIngestionEventRepository.save(event);
       } catch (error) {
@@ -445,13 +437,44 @@ export class EmailIngestService {
     }
   }
 
+  private async enrichCandidateFromCv(
+    candidateId: string,
+    parsedCv: ParsedCvCandidateInfo | null,
+    extraSkills: string[] = [],
+  ): Promise<void> {
+    if (!parsedCv && extraSkills.length === 0) return;
+
+    const candidate = await this.candidateRepository.findOne({
+      where: { id: candidateId },
+    });
+    if (!candidate) return;
+
+    const update = buildCandidateUpdateFromCv(candidate, parsedCv, extraSkills);
+    if (Object.keys(update).length > 0) {
+      await this.candidateRepository.update(candidateId, update);
+    }
+  }
+
   private async linkAttachmentsToCandidate(
     candidateId: string,
     attachments: Record<string, unknown>[],
   ) {
     if (!attachments || attachments.length === 0) return;
 
-    for (const attachment of attachments) {
+    // Only one CV is current: the first document in this email. Logos, photos
+    // and vCards are kept as files but never replace the candidate's CV.
+    const currentIndex = attachments.findIndex((attachment) =>
+      this.isDocumentAttachment(attachment),
+    );
+
+    if (currentIndex !== -1) {
+      await this.candidateCvRepository.update(
+        { candidateId, isCurrent: true },
+        { isCurrent: false },
+      );
+    }
+
+    for (const [index, attachment] of attachments.entries()) {
       const cv = this.candidateCvRepository.create({
         candidateId,
         fileUrl:
@@ -462,7 +485,7 @@ export class EmailIngestService {
           typeof attachment.filename === "string"
             ? attachment.filename
             : "attachment",
-        isCurrent: true,
+        isCurrent: index === currentIndex,
       });
       await this.candidateCvRepository.save(cv);
     }
@@ -716,36 +739,113 @@ export class EmailIngestService {
     return Buffer.concat(chunks);
   }
 
-  private async resolveCandidate(
+  /**
+   * Decides who the candidate is. The CV is the most reliable source, then
+   * contacts written in the email itself, and the sender only as a last resort:
+   * a recruiter forwarding CVs or a job board notification is not the candidate.
+   */
+  buildCandidateIdentity(
     analysis: ParsedApplicationEmailCandidateInfo,
-  ): Promise<string> {
+    parsedCv: ParsedCvCandidateInfo | null,
+    sender: string,
+  ): CandidateIdentity {
+    const pick = (
+      fromCv: string | null | undefined,
+      fromEmail: string | null | undefined,
+    ): [string | null, IdentitySource] => {
+      if (fromCv?.trim()) return [fromCv.trim(), "cv"];
+      if (fromEmail?.trim()) return [fromEmail.trim(), "email"];
+      return [null, null];
+    };
+
+    let [email, emailSource] = pick(parsedCv?.email, analysis.email);
+    let [candidateName, nameSource] = pick(
+      parsedCv?.candidateName,
+      analysis.candidateName,
+    );
+    const [phone] = pick(parsedCv?.phone, analysis.phone);
+
+    const parsedSender = this.parseSender(sender);
+    const senderIsCandidate =
+      !!parsedSender.email && !this.isNonCandidateSender(parsedSender.email);
+
+    if (!email && !phone && senderIsCandidate) {
+      email = parsedSender.email;
+      emailSource = "sender";
+    }
+
+    if (!candidateName && emailSource === "sender") {
+      candidateName = parsedSender.name || parsedSender.email!.split("@")[0];
+      nameSource = "sender";
+    }
+
+    const links = Array.from(
+      new Set([...(parsedCv?.links ?? []), ...(analysis.links ?? [])]),
+    );
+
+    return {
+      email,
+      phone,
+      candidateName,
+      links,
+      emailSource,
+      nameSource,
+    };
+  }
+
+  private parseSender(sender: string): {
+    email: string | null;
+    name: string | null;
+  } {
+    const trimmed = sender.trim();
+    const angleMatch = trimmed.match(/^"?(.*?)"?\s*<([^>]+)>\s*$/);
+    const email = (angleMatch ? angleMatch[2] : trimmed).trim();
+
+    return {
+      email: email.includes("@") ? email : null,
+      name: angleMatch?.[1]?.trim() || null,
+    };
+  }
+
+  private isNonCandidateSender(email: string): boolean {
+    const [localPart, domain = ""] = email.toLowerCase().split("@");
+
+    return (
+      NON_CANDIDATE_SENDER_LOCAL_PART.test(localPart) ||
+      JOB_BOARD_DOMAINS.some(
+        (board) => domain === board || domain.endsWith(`.${board}`),
+      )
+    );
+  }
+
+  private async resolveCandidate(identity: CandidateIdentity): Promise<string> {
     let candidate = null;
-    if (analysis.email) {
+    if (identity.email) {
       candidate = await this.candidateRepository.findOne({
-        where: { email: analysis.email },
+        where: { email: identity.email },
       });
     }
 
-    if (!candidate && analysis.phone) {
+    if (!candidate && identity.phone) {
       candidate = await this.candidateRepository.findOne({
-        where: { phone: analysis.phone },
+        where: { phone: identity.phone },
       });
     }
 
     if (!candidate) {
-      const names = analysis.candidateName?.split(" ") || [
+      const names = identity.candidateName?.split(/\s+/) || [
         "Unknown",
         "Candidate",
       ];
 
       const linkedinUrl =
-        analysis.links?.find((link) => link.includes("linkedin.com")) || "";
+        identity.links.find((link) => link.includes("linkedin.com")) || "";
 
       candidate = this.candidateRepository.create({
         firstName: names[0] || "Unknown",
         lastName: names.slice(1).join(" ") || "Candidate",
-        email: analysis.email || `no-email-${Date.now()}@example.com`,
-        phone: analysis.phone || "",
+        email: identity.email || `no-email-${Date.now()}@example.com`,
+        phone: identity.phone || "",
         linkedinUrl: linkedinUrl || "",
         isAutoCreated: true,
       });

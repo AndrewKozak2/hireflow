@@ -35,6 +35,7 @@ describe("ApplicationsService", () => {
   const mockStorageService = { download: jest.fn() };
   const mockLlmClientService = { runTask: jest.fn() };
   const mockAiScreeningService = { evaluateCandidate: jest.fn() };
+  const mockCandidateRepository = { update: jest.fn() };
 
   const application = {
     id: "application-1",
@@ -79,7 +80,10 @@ describe("ApplicationsService", () => {
           useValue: mockCandidateCvRepository,
         },
         { provide: getRepositoryToken(RecruitmentCost), useValue: {} },
-        { provide: getRepositoryToken(Candidate), useValue: {} },
+        {
+          provide: getRepositoryToken(Candidate),
+          useValue: mockCandidateRepository,
+        },
         { provide: StorageService, useValue: mockStorageService },
         { provide: MailService, useValue: {} },
         { provide: GenerateRejectionLetterService, useValue: {} },
@@ -98,6 +102,61 @@ describe("ApplicationsService", () => {
   afterEach(() => {
     jest.clearAllMocks();
     jest.restoreAllMocks();
+  });
+
+  describe("runScreeningFromExistingCv — candidate skills", () => {
+    const withCandidate = (
+      job: { title: string; requirements: string } | null,
+    ) =>
+      jest.spyOn(service, "findOne").mockResolvedValue({
+        ...application,
+        job,
+        candidate: { skills: ["Go"], phone: "", linkedinUrl: "" },
+      } as unknown as Application);
+
+    beforeEach(() => {
+      mockCandidateCvRepository.find.mockResolvedValue([storedCv("cv.docx")]);
+      filesByKey({ "cvs/cv.docx": Buffer.from("PK\x03\x04docx") });
+      mockExtractRawText.mockResolvedValue({ value: "DOCX CV text" });
+      mockLlmClientService.runTask.mockResolvedValue({
+        skills: ["NestJS"],
+        phone: null,
+        links: [],
+      });
+    });
+
+    it("should save the CV skills and the skills the screening extracted", async () => {
+      withCandidate({
+        title: "Backend Developer",
+        requirements: "NestJS\nPostgreSQL",
+      });
+      mockAiScreeningService.evaluateCandidate.mockResolvedValue({
+        matchPercentage: 82,
+        recommendation: "proceed",
+        summary: "Strong backend match",
+        extractedSkills: ["PostgreSQL", "NestJS"],
+      });
+
+      await service.runScreeningFromExistingCv(application.id);
+
+      expect(mockCandidateRepository.update).toHaveBeenCalledWith(
+        "candidate-1",
+        { skills: ["Go", "NestJS", "PostgreSQL"] },
+      );
+    });
+
+    it("should save the CV skills even when the job has no requirements to screen against", async () => {
+      withCandidate({ title: "Junior FrontEnd", requirements: "" });
+
+      await service.runScreeningFromExistingCv(application.id);
+
+      expect(mockAiScreeningService.evaluateCandidate).not.toHaveBeenCalled();
+      expect(mockApplicationRepository.update).not.toHaveBeenCalled();
+      expect(mockCandidateRepository.update).toHaveBeenCalledWith(
+        "candidate-1",
+        { skills: ["Go", "NestJS"] },
+      );
+    });
   });
 
   describe("runScreeningFromExistingCv", () => {

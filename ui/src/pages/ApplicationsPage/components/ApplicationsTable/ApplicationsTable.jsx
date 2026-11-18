@@ -13,6 +13,7 @@ import {
   Avatar,
   Select,
 } from "@mantine/core";
+import { notifications } from "@mantine/notifications";
 import clsx from "clsx";
 import dayjs from "dayjs";
 import relativeTime from "dayjs/plugin/relativeTime";
@@ -20,6 +21,7 @@ import styles from "./ApplicationsTable.module.css";
 import { ApplicationsService } from "../../../../services/ApplicationsService";
 import { JobsService } from "../../../../services/JobsService";
 import { useInfiniteScroll } from "../../../../hooks/useInfiniteScroll";
+import { assignJobAndRunScreening } from "../../utils/assignJobAndRunScreening";
 
 dayjs.extend(relativeTime);
 
@@ -208,8 +210,35 @@ export const ApplicationsTable = ({
       );
 
       try {
-        await ApplicationsService.updateApplication(applicationId, { jobId });
+        const { screening } = await assignJobAndRunScreening(
+          applicationId,
+          jobId,
+        );
         if (onDataChange) onDataChange();
+
+        screening.then((screened) => {
+          if (!screened) {
+            notifications.show({
+              color: "yellow",
+              title: "AI screening failed",
+              message:
+                "The job is assigned, but AI screening could not run for this candidate.",
+            });
+            return;
+          }
+          setData((prev) =>
+            prev.map((item) =>
+              item.id === applicationId
+                ? {
+                    ...item,
+                    aiScore: screened.aiScore,
+                    aiRecommendation: screened.aiRecommendation,
+                    aiSummary: screened.aiSummary,
+                  }
+                : item,
+            ),
+          );
+        });
       } catch (error) {
         console.error("Failed to assign job to application:", error);
         setData(previousData);
