@@ -53,6 +53,7 @@ import {
   extractCvText,
   isUnsupportedCvFilename,
 } from "../shared/utils/cv-text.utils";
+import { buildCandidateUpdateFromCv } from "../shared/utils/candidate-cv-enrichment.utils";
 
 const RESCREEN_CV_LOOKBACK = 5;
 
@@ -532,39 +533,17 @@ export class ApplicationsService {
         });
 
         if (parsedCv) {
-          const updateData: Partial<Candidate> = {};
-
-          if (parsedCv.skills && parsedCv.skills.length > 0) {
-            const mergedSkills = [
-              ...(application.candidate.skills || []),
-              ...parsedCv.skills,
-            ];
-            updateData.skills = Array.from(new Set(mergedSkills));
-            application.candidate.skills = updateData.skills;
-          }
-
-          if (parsedCv.phone && !application.candidate.phone) {
-            updateData.phone = parsedCv.phone;
-          }
-
-          if (
-            parsedCv.links &&
-            parsedCv.links.length > 0 &&
-            !application.candidate.linkedinUrl
-          ) {
-            const linkedin = parsedCv.links.find((l) =>
-              l.includes("linkedin.com"),
-            );
-            if (linkedin) {
-              updateData.linkedinUrl = linkedin;
-            }
-          }
+          const updateData = buildCandidateUpdateFromCv(
+            application.candidate,
+            parsedCv,
+          );
 
           if (Object.keys(updateData).length > 0) {
             await this.candidateRepository.update(
               application.candidateId,
               updateData,
             );
+            Object.assign(application.candidate, updateData);
           }
         }
 
@@ -634,6 +613,7 @@ export class ApplicationsService {
       const parsedCv = await this.llmClientService.runTask(parseCvTask, {
         extractedText,
       });
+      let screeningSkills: string[] = [];
 
       if (application.job && parsedCv) {
         const requirementsArray = application.job.requirements
@@ -657,9 +637,24 @@ export class ApplicationsService {
               screeningResult.recommendation as AiRecommendation,
             aiSummary: screeningResult.summary,
           });
+          screeningSkills = screeningResult.extractedSkills ?? [];
 
           this.logger.log(
             `[Cross-Vacancy] AI Screening Complete! Score: ${screeningResult.matchPercentage}`,
+          );
+        }
+      }
+
+      if (parsedCv && application.candidate) {
+        const candidateUpdate = buildCandidateUpdateFromCv(
+          application.candidate,
+          parsedCv,
+          screeningSkills,
+        );
+        if (Object.keys(candidateUpdate).length > 0) {
+          await this.candidateRepository.update(
+            application.candidateId,
+            candidateUpdate,
           );
         }
       }

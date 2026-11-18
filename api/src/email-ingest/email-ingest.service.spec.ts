@@ -14,6 +14,8 @@ import { ParsedApplicationEmailCandidateInfo } from "../llm/tasks/parse-applicat
 import { LlmClientService } from "src/llm/llm-client.service";
 import { AiScreeningService } from "../llm/tasks/ai-screening/ai-screening.service";
 import { JobService } from "src/job/job.service";
+import { ParsedCvCandidateInfo } from "src/llm/tasks/parse-cv/interfaces/parse-cv.interface";
+import { Readable } from "stream";
 
 jest.mock("pdf-parse", () => jest.fn());
 jest.mock("mammoth", () => ({ extractRawText: jest.fn() }));
@@ -29,7 +31,11 @@ describe("EmailIngestService", () => {
     update: jest.fn(),
   };
   const mockApplicationRepository = { create: jest.fn(), save: jest.fn() };
-  const mockCandidateCvRepository = { create: jest.fn(), save: jest.fn() };
+  const mockCandidateCvRepository = {
+    create: jest.fn(),
+    save: jest.fn(),
+    update: jest.fn(),
+  };
   const mockStorageService = { upload: jest.fn(), download: jest.fn() };
   const mockDataSource = {
     getRepository: jest.fn(() => ({
@@ -263,6 +269,271 @@ describe("EmailIngestService", () => {
       expect(event.errorMessage).toBe("LLM unavailable");
       expect(mockCandidateRepository.save).not.toHaveBeenCalled();
       expect(mockApplicationRepository.save).not.toHaveBeenCalled();
+    });
+  });
+
+  const buildParsedCv = (
+    overrides: Partial<ParsedCvCandidateInfo> = {},
+  ): ParsedCvCandidateInfo => ({
+    candidateName: null,
+    email: null,
+    phone: null,
+    location: null,
+    links: [],
+    skills: [],
+    experienceSummary: null,
+    education: [],
+    summary: null,
+    ...overrides,
+  });
+
+  describe("buildCandidateIdentity", () => {
+    const noContacts = buildAnalysis({ candidateName: null, email: null });
+
+    it("prefers the CV contacts when a recruiter forwards someone else's CV", () => {
+      const identity = service.buildCandidateIdentity(
+        buildAnalysis({ candidateName: "Mariia Venhryniuk", email: null }),
+        buildParsedCv({
+          candidateName: "Mariia Venhryniuk",
+          email: "mariia@example.com",
+          phone: "+380501112233",
+        }),
+        "Andrew Kozak <andrii.kozak@intercode.io>",
+      );
+
+      expect(identity).toMatchObject({
+        email: "mariia@example.com",
+        phone: "+380501112233",
+        candidateName: "Mariia Venhryniuk",
+        emailSource: "cv",
+        nameSource: "cv",
+      });
+    });
+
+    it("uses the contacts written in a job board notification, not the board's address", () => {
+      const identity = service.buildCandidateIdentity(
+        buildAnalysis({
+          candidateName: "Olena Petrenko",
+          email: "olena@example.com",
+        }),
+        null,
+        "Work.ua <noreply@work.ua>",
+      );
+
+      expect(identity).toMatchObject({
+        email: "olena@example.com",
+        candidateName: "Olena Petrenko",
+        emailSource: "email",
+        nameSource: "email",
+      });
+    });
+
+    it.each([
+      "Work.ua <noreply@work.ua>",
+      "DOU <jobs@dou.ua>",
+      "Djinni <inbox@djinni.co>",
+      "LinkedIn <jobs-listings@linkedin.com>",
+      "Company HR <hr@company.com>",
+      "notifications@example.com",
+    ])("never treats %s as the candidate", (sender) => {
+      const identity = service.buildCandidateIdentity(noContacts, null, sender);
+
+      expect(identity.email).toBeNull();
+      expect(identity.emailSource).toBeNull();
+    });
+
+    it("falls back to the sender when a candidate writes from their own address with no contacts anywhere", () => {
+      const identity = service.buildCandidateIdentity(
+        noContacts,
+        null,
+        '"Jane Doe" <jane@example.com>',
+      );
+
+      expect(identity).toMatchObject({
+        email: "jane@example.com",
+        candidateName: "Jane Doe",
+        emailSource: "sender",
+        nameSource: "sender",
+      });
+    });
+
+    it("does not borrow the sender's email when the CV has a phone to match on", () => {
+      const identity = service.buildCandidateIdentity(
+        noContacts,
+        buildParsedCv({
+          candidateName: "Andrii Vasyliu",
+          phone: "+380671234567",
+        }),
+        "Andrew Kozak <andrii.kozak@intercode.io>",
+      );
+
+      expect(identity).toMatchObject({
+        email: null,
+        phone: "+380671234567",
+        candidateName: "Andrii Vasyliu",
+        emailSource: null,
+        nameSource: "cv",
+      });
+    });
+  });
+
+  describe("analyzeEmail — candidate identity", () => {
+    const runForwardedCv = async (parsedCv: ParsedCvCandidateInfo) => {
+      const event = buildEvent([
+        { filename: "cv.txt", contentType: "text/plain", storageKey: "k1" },
+      ]);
+      event.sender = "Andrew Kozak <andrii.kozak@intercode.io>";
+      mockEventRepository.findBy.mockResolvedValue([event]);
+      mockParseApplicationEmailService.parse.mockResolvedValue(
+        buildAnalysis({
+          candidateName: parsedCv.candidateName,
+          email: null,
+          isApplication: true,
+        }),
+      );
+      mockStorageService.download.mockResolvedValue(
+        Readable.from(["Mariia Venhryniuk, Frontend Developer"]),
+      );
+      mockLlmClientService.runTask.mockResolvedValue(parsedCv);
+
+      await service.analyzeEmail([event.id]);
+
+      return event;
+    };
+
+    it("looks the candidate up by the CV's email, not the forwarder's", async () => {
+      const event = await runForwardedCv(
+        buildParsedCv({
+          candidateName: "Mariia Venhryniuk",
+          email: "mariia@example.com",
+        }),
+      );
+
+      expect(mockCandidateRepository.findOne).toHaveBeenCalledWith({
+        where: { email: "mariia@example.com" },
+      });
+      expect(mockCandidateRepository.findOne).not.toHaveBeenCalledWith({
+        where: { email: "andrii.kozak@intercode.io" },
+      });
+      expect(mockCandidateRepository.create).toHaveBeenCalledWith(
+        expect.objectContaining({
+          firstName: "Mariia",
+          lastName: "Venhryniuk",
+          email: "mariia@example.com",
+        }),
+      );
+      expect(event.classificationResult).toMatchObject({
+        identity: { emailSource: "cv", nameSource: "cv" },
+      });
+    });
+
+    it("saves the CV's skills, phone and LinkedIn even when no job matches", async () => {
+      mockCandidateRepository.findOne.mockImplementation(
+        ({ where }: { where: { id?: string } }) =>
+          Promise.resolve(
+            where.id === "candidate-1"
+              ? { id: "candidate-1", skills: [], phone: "", linkedinUrl: "" }
+              : null,
+          ),
+      );
+
+      await runForwardedCv(
+        buildParsedCv({
+          candidateName: "Mariia Venhryniuk",
+          email: "mariia@example.com",
+          phone: "+380992688092",
+          links: ["https://www.linkedin.com/in/mariia"],
+          skills: ["React", "TypeScript"],
+        }),
+      );
+
+      expect(mockJobService.findAll).toHaveBeenCalled();
+      expect(mockAiScreeningService.evaluateCandidate).not.toHaveBeenCalled();
+      expect(mockCandidateRepository.update).toHaveBeenCalledWith(
+        "candidate-1",
+        {
+          skills: ["React", "TypeScript"],
+          phone: "+380992688092",
+          linkedinUrl: "https://www.linkedin.com/in/mariia",
+        },
+      );
+    });
+
+    it("creates a separate candidate when nobody's contacts are known, instead of merging into the sender", async () => {
+      const event = buildEvent([]);
+      event.sender = "Work.ua <noreply@work.ua>";
+      mockEventRepository.findBy.mockResolvedValue([event]);
+      mockParseApplicationEmailService.parse.mockResolvedValue(
+        buildAnalysis({
+          candidateName: "Olena Petrenko",
+          email: null,
+          appliedRole: "QA Engineer",
+        }),
+      );
+
+      await service.analyzeEmail([event.id]);
+
+      expect(mockCandidateRepository.findOne).not.toHaveBeenCalled();
+      const [created] = mockCandidateRepository.create.mock.calls[0] as [
+        { firstName: string; lastName: string; email: string },
+      ];
+      expect(created).toMatchObject({
+        firstName: "Olena",
+        lastName: "Petrenko",
+      });
+      expect(created.email).toMatch(/^no-email-\d+@example\.com$/);
+    });
+  });
+
+  describe("analyzeEmail — current CV", () => {
+    it("makes only the email's first document current and resets the older ones", async () => {
+      await runWith(buildAnalysis({ isApplication: true }), [
+        { filename: "logo.png", contentType: "image/png", storageKey: "k1" },
+        {
+          filename: "cv.pdf",
+          contentType: "application/pdf",
+          storageKey: "k2",
+        },
+        { filename: "letter.pdf", contentType: null, storageKey: "k3" },
+      ]);
+
+      expect(mockCandidateCvRepository.update).toHaveBeenCalledWith(
+        { candidateId: "candidate-1", isCurrent: true },
+        { isCurrent: false },
+      );
+      expect(
+        mockCandidateCvRepository.create.mock.calls.map(
+          ([cv]: [{ originalFilename: string; isCurrent: boolean }]) => [
+            cv.originalFilename,
+            cv.isCurrent,
+          ],
+        ),
+      ).toEqual([
+        ["logo.png", false],
+        ["cv.pdf", true],
+        ["letter.pdf", false],
+      ]);
+    });
+
+    it("keeps the existing current CV when the email has no document", async () => {
+      await runWith(
+        buildAnalysis({ isApplication: true, appliedRole: "QA Engineer" }),
+        [
+          {
+            filename: "photo.jpg",
+            contentType: "image/jpeg",
+            storageKey: "k1",
+          },
+        ],
+      );
+
+      expect(mockCandidateCvRepository.update).not.toHaveBeenCalled();
+      expect(mockCandidateCvRepository.create).toHaveBeenCalledWith(
+        expect.objectContaining({
+          originalFilename: "photo.jpg",
+          isCurrent: false,
+        }),
+      );
     });
   });
 });
