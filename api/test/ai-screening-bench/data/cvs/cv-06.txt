@@ -1,0 +1,24 @@
+Iryna Savchuk-Example
+Full-stack Developer (Node.js / React)
+iryna.savchuk@example.com | Odesa
+
+Summary
+Full-stack developer with 4 years of commercial experience: NestJS and PostgreSQL on the backend, React and TypeScript on the frontend. Most of my time in the last year went to the backend.
+
+Experience
+Full-stack Developer — BookIt (fictional), 2023–present
+- NestJS + TypeScript API for a booking platform; PostgreSQL with TypeORM migrations; Redis caching.
+- React + TypeScript client with Zustand and React Query; responsive layouts in CSS.
+- REST API design and Swagger docs; Jest unit tests on both sides.
+- Docker Compose for local environments, GitHub Actions for CI.
+
+Web Developer — Freelance, 2022–2023
+- Express.js APIs and React frontends for small clients.
+
+Education
+Bachelor in Computer Engineering, Odesa Polytechnic, 2022
+
+Skills
+TypeScript, JavaScript, Node.js, NestJS, Express, PostgreSQL, TypeORM, Redis, React, Zustand, React Query, CSS, Jest, Docker, GitHub Actions
+
+English: B2

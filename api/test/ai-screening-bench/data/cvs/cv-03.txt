@@ -1,0 +1,24 @@
+Andrii Moroz-Example
+Lead Java Engineer
+andrii.moroz@example.com | Kharkiv, Ukraine
+
+Profile
+Java engineer with 9 years in banking and telecom. Strong in distributed systems, relational databases and team leadership. No commercial Node.js experience; have read about NestJS and find its module system close to Spring.
+
+Experience
+Lead Java Engineer — TeleNova (fictional), 2019–present
+- Led a team of 6 building Spring Boot microservices for billing.
+- PostgreSQL and Oracle: schema design, partitioning, query tuning for tables with billions of rows.
+- REST and gRPC API design; contract tests with Pact.
+- Docker, Kubernetes, Jenkins and later GitLab CI pipelines.
+
+Senior Java Developer — FinCore Bank (fictional), 2015–2019
+- Core banking integrations in Java 8, Spring, Hibernate.
+
+Education
+Master of Applied Mathematics, Kharkiv National University, 2015
+
+Skills
+Java, Kotlin, Spring Boot, Hibernate, PostgreSQL, Oracle, Kafka, Docker, Kubernetes, GitLab CI, REST, gRPC
+
+English: C1 (IELTS 7.5)

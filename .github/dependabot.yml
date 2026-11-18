@@ -8,6 +8,10 @@ updates:
     ignore:
       - dependency-name: "*"
         update-types: ["version-update:semver-major"]
+      # Frozen while the AI screening bench runs its experiment series (issue #16):
+      # a new SDK can change request behaviour (1.0.0 switches the API version).
+      # Remove this entry when the series is over.
+      - dependency-name: "@anthropic-ai/sdk"
     groups:
       minor-and-patch:
         update-types: [minor, patch]

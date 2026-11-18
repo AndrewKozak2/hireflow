@@ -1,0 +1,24 @@
+Sofiia Bondar-Example
+Frontend Developer (React)
+sofiia.bondar@example.com | Dnipro / remote
+
+Summary
+Frontend developer with 3.5 years of commercial React and TypeScript experience on B2B dashboards. I care about accessible, well-tested UI.
+
+Experience
+Frontend Developer — Metricly (fictional), 2022–present
+- React 18 + TypeScript SPA for analytics dashboards; Redux Toolkit for app state, React Query for server data.
+- Built a responsive design system with CSS modules and CSS grid, used by 4 product teams.
+- Integrated REST and some GraphQL endpoints; error and loading states, optimistic updates.
+- Jest and React Testing Library for components; Playwright smoke tests.
+
+Junior Frontend Developer — WebCraft (fictional), 2021–2022
+- Landing pages and a React admin panel.
+
+Education
+Bachelor of Computer Science, Oles Honchar Dnipro National University, 2021
+
+Skills
+React, TypeScript, Redux Toolkit, React Query, Zustand, CSS, SCSS, Jest, React Testing Library, Playwright, Vite, Git
+
+English: B2

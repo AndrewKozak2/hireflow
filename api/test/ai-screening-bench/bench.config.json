@@ -1,0 +1,20 @@
+{
+  "sdkVersion": "0.137.0",
+  "models": {
+    "light": "claude-haiku-4-5-20251001",
+    "heavy": "claude-sonnet-4-6"
+  },
+  "llm": {
+    "temperature": 0,
+    "maxTokens": 1000,
+    "timeoutMs": 30000
+  },
+  "repeats": 3,
+  "transportAttempts": 3,
+  "priceList": "prices/2026-11-02.json",
+  "configurations": [
+    { "name": "heavy", "cvInput": "parsed", "parseTier": "light", "screenTier": "heavy" },
+    { "name": "light", "cvInput": "parsed", "parseTier": "light", "screenTier": "light" },
+    { "name": "raw-heavy", "cvInput": "raw", "screenTier": "heavy" }
+  ]
+}

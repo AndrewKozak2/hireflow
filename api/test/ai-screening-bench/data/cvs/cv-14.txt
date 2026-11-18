@@ -1,0 +1,14 @@
+Olena Kravets-Example
+backend dev
+olena.kravets@example.com
+
+hi! i write backend in TS on Node for about 6 yrs now. last 4 yrs on Nest, before that plain express.
+
+what i did:
+- @ Quickbite (fictional, food delivery, 2022-now): orders + couriers services, Nest + Postgres + Redis. did most of the db schema, migrations, fixing slow queries (explain analyze is my friend). designed the public REST API, wrote the swagger.
+- @ Adly (fictional, adtech, 2020-2022): express + TS, Postgres, docker-compose, set up CI in gitlab.
+- @ a small outsourcing shop (2019-2020): node/express apis for clients.
+
+stack: ts, node, nest, express, postgres, redis, docker, gitlab ci, github actions, jest
+uni: kpi (igor sikorsky kyiv polytechnic), bachelor, 2019
+english — upper-intermediate, daily calls with the team in Berlin

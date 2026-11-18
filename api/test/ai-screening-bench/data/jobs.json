@@ -1,0 +1,22 @@
+[
+  {
+    "id": "job-backend-node",
+    "title": "Senior Backend Engineer (Node.js)",
+    "requirements": "5+ years of commercial backend development with Node.js and TypeScript\nProduction experience with NestJS or Express\nPostgreSQL: schema design, migrations and query optimisation\nDesigning and documenting REST APIs\nDocker and CI/CD pipelines\nEnglish at B2 level or higher"
+  },
+  {
+    "id": "job-frontend-react",
+    "title": "Middle Frontend Developer (React)",
+    "requirements": "2+ years of commercial experience with React\nTypeScript in day-to-day work\nState management with Redux, Zustand or React Query\nResponsive layouts with modern CSS\nIntegrating REST APIs\nUnit and component tests with Jest and React Testing Library"
+  },
+  {
+    "id": "job-data-analyst",
+    "title": "Data Analyst",
+    "requirements": "2+ years in a data analyst role\nAdvanced SQL: joins, window functions, CTEs\nPython for analysis (pandas)\nDashboards in Power BI or Tableau\nDesigning and evaluating A/B tests\nPresenting findings to non-technical stakeholders"
+  },
+  {
+    "id": "job-qa-automation",
+    "title": "QA Automation Engineer",
+    "requirements": "3+ years of test automation\nPlaywright or Cypress\nJavaScript or TypeScript\nAPI testing (Postman or code-based)\nRunning tests in CI (GitHub Actions, GitLab CI or Jenkins)\nBug tracking in Jira"
+  }
+]

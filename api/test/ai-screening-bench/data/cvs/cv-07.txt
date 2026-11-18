@@ -1,0 +1,24 @@
+Natalia Hrytsenko-Example
+Data Analyst
+natalia.hrytsenko@example.com | Kyiv
+
+Summary
+Data analyst with 3 years in e-commerce and mobile apps. I turn messy event data into decisions: experiments, funnels, retention.
+
+Experience
+Data Analyst — Basketly (fictional), 2023–present
+- Wrote SQL (BigQuery, PostgreSQL) with window functions and CTEs for product metrics.
+- Designed and analysed 20+ A/B tests; built a sample-size and significance calculator in Python.
+- Python (pandas, numpy, scipy) notebooks for cohort and retention analysis.
+- Tableau dashboards for marketing and product leadership; monthly business reviews with non-technical stakeholders.
+
+Junior Analyst — AppMetrics (fictional), 2022–2023
+- Reporting in Excel and Google Sheets, first SQL queries.
+
+Education
+Bachelor of Economics, Kyiv School of Economics, 2022
+
+Skills
+SQL, BigQuery, PostgreSQL, Python, pandas, scipy, Tableau, Excel, A/B testing, statistics
+
+English: B2
