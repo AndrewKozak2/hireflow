@@ -59,13 +59,13 @@ export class AnalyticsRepository {
 
     const query = `
       WITH current_apps AS (
-        SELECT a.id, a.stage, a."createdAt"
+        SELECT a.id, a.stage, a."createdAt", a."aiScore"
         FROM applications a
         ${joinCur}
         WHERE ${whereCur}
       ),
       previous_apps AS (
-        SELECT a.id, a.stage, a."createdAt"
+        SELECT a.id, a.stage, a."createdAt", a."aiScore"
         FROM applications a
         ${joinPrev}
         WHERE ${wherePrev}
@@ -78,7 +78,8 @@ export class AnalyticsRepository {
           AVG(EXTRACT(EPOCH FROM (
             (SELECT e."createdAt" FROM application_event e WHERE e."applicationId" = current_apps.id AND e.type = 'stage_changed' AND e.payload->>'to' = 'hired' ORDER BY e."createdAt" DESC LIMIT 1) - current_apps."createdAt"
           ))/86400.0) as avg_time_to_hire,
-          COUNT(CASE WHEN EXISTS(SELECT 1 FROM score_cards sc WHERE sc."applicationId" = current_apps.id) THEN 1 END) as ai_apps
+          -- AI coverage: AI screened the application on intake (aiScore) or generated an interview score card
+          COUNT(CASE WHEN current_apps."aiScore" IS NOT NULL OR EXISTS(SELECT 1 FROM score_cards sc WHERE sc."applicationId" = current_apps.id) THEN 1 END) as ai_apps
         FROM current_apps
       ),
       previous_metrics AS (
@@ -89,7 +90,7 @@ export class AnalyticsRepository {
           AVG(EXTRACT(EPOCH FROM (
             (SELECT e."createdAt" FROM application_event e WHERE e."applicationId" = previous_apps.id AND e.type = 'stage_changed' AND e.payload->>'to' = 'hired' ORDER BY e."createdAt" DESC LIMIT 1) - previous_apps."createdAt"
           ))/86400.0) as avg_time_to_hire,
-          COUNT(CASE WHEN EXISTS(SELECT 1 FROM score_cards sc WHERE sc."applicationId" = previous_apps.id) THEN 1 END) as ai_apps
+          COUNT(CASE WHEN previous_apps."aiScore" IS NOT NULL OR EXISTS(SELECT 1 FROM score_cards sc WHERE sc."applicationId" = previous_apps.id) THEN 1 END) as ai_apps
         FROM previous_apps
       )
       SELECT 
