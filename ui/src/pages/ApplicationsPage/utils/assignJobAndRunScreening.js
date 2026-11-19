@@ -14,7 +14,8 @@ export async function assignJobAndRunScreening(applicationId, jobId) {
   const screening = ApplicationsService.runScreeningFromExistingCv(
     applicationId,
   )
-    .then((response) => response?.data ?? null)
+    // apiClient already returns the response body: the screened application
+    .then((application) => application ?? null)
     .catch((error) => {
       console.error("AI screening after job assignment failed:", error);
       return null;

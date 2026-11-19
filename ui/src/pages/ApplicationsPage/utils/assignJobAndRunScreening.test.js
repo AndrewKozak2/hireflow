@@ -18,7 +18,9 @@ describe("assignJobAndRunScreening", () => {
   it("saves the job first, then screens the application against it", async () => {
     ApplicationsService.updateApplication.mockResolvedValue({});
     ApplicationsService.runScreeningFromExistingCv.mockResolvedValue({
-      data: { id: "app-1", aiScore: 74, aiRecommendation: "proceed" },
+      id: "app-1",
+      aiScore: 74,
+      aiRecommendation: "proceed",
     });
 
     const { screening } = await assignJobAndRunScreening("app-1", "job-1");
