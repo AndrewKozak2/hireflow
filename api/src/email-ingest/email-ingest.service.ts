@@ -48,6 +48,9 @@ import { AiRecommendation } from "../applications/enums/ai-recommendation.enum";
 import { resolveAppliedJob } from "./applied-role.utils";
 
 const MAX_CV_TEXT_CHARS = 40_000;
+/** Email given to a candidate created without one: no-email-<timestamp>@example.com. */
+const PLACEHOLDER_EMAIL_PREFIX = "no-email-";
+const PLACEHOLDER_EMAIL_PATTERN = /^no-email-\d+@example\.com$/i;
 
 /**
  * Sender addresses that never belong to the candidate: automated mailboxes and
@@ -840,9 +843,17 @@ export class EmailIngestService {
     }
 
     if (!candidate && identity.phone) {
-      candidate = await this.candidateRepository.findOne({
+      const samePhone = await this.candidateRepository.findOne({
         where: { phone: identity.phone },
       });
+      // A shared phone (a typo, an office or agency number) is not enough to
+      // merge two people whose emails disagree: then it is a new candidate.
+      if (
+        samePhone &&
+        (!identity.email || this.isPlaceholderEmail(samePhone.email))
+      ) {
+        candidate = samePhone;
+      }
     }
 
     if (!candidate) {
@@ -857,7 +868,9 @@ export class EmailIngestService {
       candidate = this.candidateRepository.create({
         firstName: names[0] || "Unknown",
         lastName: names.slice(1).join(" ") || "Candidate",
-        email: identity.email || `no-email-${Date.now()}@example.com`,
+        email:
+          identity.email ||
+          `${PLACEHOLDER_EMAIL_PREFIX}${Date.now()}@example.com`,
         phone: identity.phone || "",
         linkedinUrl: linkedinUrl || "",
         isAutoCreated: true,
@@ -866,6 +879,11 @@ export class EmailIngestService {
     }
 
     return candidate.id;
+  }
+
+  /** Candidates created without an email get a generated placeholder one. */
+  private isPlaceholderEmail(email: string | null | undefined): boolean {
+    return !email?.trim() || PLACEHOLDER_EMAIL_PATTERN.test(email);
   }
 
   private async createUnassignedApplication(

@@ -466,6 +466,70 @@ describe("EmailIngestService", () => {
       );
     });
 
+    const existingByPhone = (email: string) =>
+      mockCandidateRepository.findOne.mockImplementation(
+        ({ where }: { where: { phone?: string; id?: string } }) =>
+          Promise.resolve(
+            where.phone === "+380500006601" || where.id === "vlada"
+              ? {
+                  id: "vlada",
+                  email,
+                  phone: "+380500006601",
+                  skills: [],
+                  linkedinUrl: "",
+                }
+              : null,
+          ),
+      );
+
+    it("does not merge two people who share a phone but have different emails", async () => {
+      existingByPhone("vlada@example.com");
+
+      await runForwardedCv(
+        buildParsedCv({
+          candidateName: "Roman Petrenko",
+          email: "roman@example.com",
+          phone: "+380500006601",
+        }),
+      );
+
+      expect(mockCandidateRepository.create).toHaveBeenCalledWith(
+        expect.objectContaining({
+          firstName: "Roman",
+          lastName: "Petrenko",
+          email: "roman@example.com",
+        }),
+      );
+    });
+
+    it("finds the candidate by phone when the CV has no email", async () => {
+      existingByPhone("vlada@example.com");
+
+      await runForwardedCv(
+        buildParsedCv({
+          candidateName: "Vlada Ostapenko",
+          email: null,
+          phone: "+380500006601",
+        }),
+      );
+
+      expect(mockCandidateRepository.create).not.toHaveBeenCalled();
+    });
+
+    it("finds a candidate by phone who was saved without a real email", async () => {
+      existingByPhone("no-email-1795000000000@example.com");
+
+      await runForwardedCv(
+        buildParsedCv({
+          candidateName: "Vlada Ostapenko",
+          email: "vlada@example.com",
+          phone: "+380500006601",
+        }),
+      );
+
+      expect(mockCandidateRepository.create).not.toHaveBeenCalled();
+    });
+
     it("creates a separate candidate when nobody's contacts are known, instead of merging into the sender", async () => {
       const event = buildEvent([]);
       event.sender = "Work.ua <noreply@work.ua>";
