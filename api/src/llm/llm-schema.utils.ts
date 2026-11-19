@@ -65,6 +65,15 @@ export function stringValue(value: unknown, key: string): string {
   return value;
 }
 
+/** Like stringArray, but a missing or null value is an empty list. */
+export function optionalStringArray(value: unknown, key: string): string[] {
+  if (value === null || value === undefined) {
+    return [];
+  }
+
+  return stringArray(value, key);
+}
+
 export function stringArray(value: unknown, key: string): string[] {
   if (!Array.isArray(value)) {
     throw new LlmSchemaValidationError(`${key} must be an array of strings`, {

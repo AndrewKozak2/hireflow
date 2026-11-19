@@ -2,6 +2,7 @@ import {
   createObjectSchema,
   nullableString,
   stringArray,
+  optionalStringArray,
   nullableBoolean,
 } from "../../llm-schema.utils";
 import { ParsedApplicationEmailCandidateInfo } from "./interfaces/parse-application-email.interface";
@@ -18,5 +19,6 @@ export const parseApplicationEmailSchema =
       links: stringArray,
       summary: nullableString,
       isApplication: nullableBoolean,
+      appliedJobTitles: optionalStringArray,
     },
   );

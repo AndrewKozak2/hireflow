@@ -45,6 +45,7 @@ import { ParsedCvCandidateInfo } from "src/llm/tasks/parse-cv/interfaces/parse-c
 import { buildCandidateUpdateFromCv } from "src/shared/utils/candidate-cv-enrichment.utils";
 import { AiScreeningService } from "../llm/tasks/ai-screening/ai-screening.service";
 import { AiRecommendation } from "../applications/enums/ai-recommendation.enum";
+import { resolveAppliedJob } from "./applied-role.utils";
 
 const MAX_CV_TEXT_CHARS = 40_000;
 
@@ -174,6 +175,11 @@ export class EmailIngestService {
     const events = await this.emailIngestionEventRepository.findBy({
       id: In(eventIds),
     });
+    const openJobs = (await this.jobService.findAll(
+      { status: [JobStatus.ACTIVE] },
+      { role: UserRole.ADMIN } as JwtPayload,
+    )) as MatchApplicationToJobInput["jobs"];
+
     for (const event of events) {
       const rule = await this.getDomainRule(event.sender);
       if (!rule) {
@@ -197,6 +203,7 @@ export class EmailIngestService {
               : "No subject",
           body: typeof payload.body === "string" ? payload.body : "",
           attachments: this.toApplicationEmailAttachments(attachmentManifest),
+          openJobTitles: openJobs.map((job) => job.title),
         });
 
         // The LLM's isApplication means "has a CV", so a false is only a veto: any
@@ -321,13 +328,20 @@ export class EmailIngestService {
           dbSource,
         );
 
-        const allJobs = (await this.jobService.findAll(
-          { status: [JobStatus.ACTIVE] },
-          { role: UserRole.ADMIN } as JwtPayload,
-        )) as MatchApplicationToJobInput["jobs"];
+        // Link only when the email identifies exactly one open job. AI matching
+        // by CV fit is kept as stored suggestions and never assigns a job.
+        const resolution = resolveAppliedJob(analysis, openJobs);
+        let suggestions: MatchedJob[] = [];
 
-        let bestMatch: MatchedJob | undefined;
-        if (allJobs.length > 0) {
+        if (resolution.status === "identified") {
+          this.logger.log(
+            `[EmailIngest] Event ${event.id} applies for job ${resolution.job?.id}`,
+          );
+        } else if (resolution.status === "ambiguous") {
+          this.logger.log(
+            `[EmailIngest] Event ${event.id} could mean ${resolution.candidates.length} open jobs; leaving it unassigned`,
+          );
+        } else if (openJobs.length > 0) {
           try {
             const matchedJobs = await this.llmClientService.runTask(
               matchApplicationToJobTask,
@@ -340,42 +354,32 @@ export class EmailIngestService {
                     analysis.appliedRole,
                   ),
                 },
-                jobs: allJobs,
+                jobs: openJobs,
               },
             );
-
-            this.logger.log(
-              `[EmailIngest] Результат від ШІ: ${JSON.stringify(matchedJobs, null, 2)}`,
+            const jobIds = new Set(openJobs.map((job) => job.id));
+            suggestions = matchedJobs.filter((match) =>
+              jobIds.has(match.jobId),
             );
-
-            const jobIds = new Set(allJobs.map((job) => job.id));
-            bestMatch = matchedJobs.find(
-              (match: MatchedJob) =>
-                (match.confidence === "high" ||
-                  match.confidence === "medium") &&
-                jobIds.has(match.jobId),
+            this.logger.log(
+              `[EmailIngest] No job named in event ${event.id}; AI suggestions: ${JSON.stringify(suggestions)}`,
             );
           } catch (error) {
             this.logger.warn(
-              `[EmailIngest] Failed to match application to jobs for event ${event.id}: ${
+              `[EmailIngest] Failed to suggest jobs for event ${event.id}: ${
                 error instanceof Error ? error.message : String(error)
               }`,
             );
           }
-        } else {
-          this.logger.log(
-            `[EmailIngest] No active jobs found for event ${event.id}; skipping application matching`,
-          );
         }
 
-        if (bestMatch) {
+        const matchedJob = resolution.job;
+        if (matchedJob) {
           await this.assignApplicationToJob(
             application.id,
             candidateId,
-            bestMatch.jobId,
+            matchedJob.id,
           );
-
-          const matchedJob = allJobs.find((j) => j.id === bestMatch.jobId);
 
           if (matchedJob && parsedCv) {
             try {
@@ -393,7 +397,7 @@ export class EmailIngestService {
                   parsedCv,
                 );
 
-              application.jobId = bestMatch.jobId;
+              application.jobId = matchedJob.id;
               application.aiScore = screeningResult.matchPercentage;
               application.aiRecommendation =
                 screeningResult.recommendation as unknown as AiRecommendation;
@@ -425,6 +429,15 @@ export class EmailIngestService {
           identity: {
             emailSource: identity.emailSource,
             nameSource: identity.nameSource,
+          },
+          jobMatch: {
+            status: resolution.status,
+            jobId: resolution.job?.id ?? null,
+            candidates: resolution.candidates.map(({ id, title }) => ({
+              id,
+              title,
+            })),
+            suggestions,
           },
         };
         await this.emailIngestionEventRepository.save(event);

@@ -16,6 +16,7 @@ import { AiScreeningService } from "../llm/tasks/ai-screening/ai-screening.servi
 import { JobService } from "src/job/job.service";
 import { ParsedCvCandidateInfo } from "src/llm/tasks/parse-cv/interfaces/parse-cv.interface";
 import { Readable } from "stream";
+import { matchApplicationToJobTask } from "src/llm/tasks/match-application-to-job/match-application-to-job.task";
 
 jest.mock("pdf-parse", () => jest.fn());
 jest.mock("mammoth", () => ({ extractRawText: jest.fn() }));
@@ -30,7 +31,12 @@ describe("EmailIngestService", () => {
     save: jest.fn(),
     update: jest.fn(),
   };
-  const mockApplicationRepository = { create: jest.fn(), save: jest.fn() };
+  const mockApplicationRepository = {
+    create: jest.fn(),
+    save: jest.fn(),
+    findOne: jest.fn(),
+    update: jest.fn(),
+  };
   const mockCandidateCvRepository = {
     create: jest.fn(),
     save: jest.fn(),
@@ -60,6 +66,7 @@ describe("EmailIngestService", () => {
     links: [],
     summary: null,
     isApplication: false,
+    appliedJobTitles: [],
     ...overrides,
   });
 
@@ -534,6 +541,211 @@ describe("EmailIngestService", () => {
           isCurrent: false,
         }),
       );
+    });
+  });
+
+  describe("analyzeEmail — job matching", () => {
+    const jobs = [
+      {
+        id: "design",
+        title: "UI/UX Designer",
+        requirements: "Figma\nUser research",
+      },
+      {
+        id: "backend",
+        title: "Middle Backend Developer (Node.js / NestJS)",
+        requirements: "NestJS\nPostgreSQL",
+      },
+      {
+        id: "junior-fe",
+        title: "Junior Frontend Developer (React)",
+        requirements: "React\nTypeScript",
+      },
+      {
+        id: "middle-fe",
+        title: "Middle Frontend Developer",
+        requirements: "React\nArchitecture",
+      },
+      {
+        id: "marketing",
+        title: "Recruitment Marketing Specialist",
+        requirements: "Job ads\nAnalytics",
+      },
+    ];
+
+    const runWithCv = async (
+      email: { appliedRole?: string | null; appliedJobTitles?: string[] },
+      aiSuggestions: {
+        jobId: string;
+        confidence: string;
+        reason: string;
+      }[] = [],
+    ) => {
+      const event = buildEvent([
+        { filename: "cv.txt", contentType: "text/plain", storageKey: "k1" },
+      ]);
+      mockEventRepository.findBy.mockResolvedValue([event]);
+      mockParseApplicationEmailService.parse.mockResolvedValue(
+        buildAnalysis({ isApplication: true, appliedRole: null, ...email }),
+      );
+      mockStorageService.download.mockResolvedValue(
+        Readable.from(["Graphic designer, Photoshop, Canva"]),
+      );
+      mockJobService.findAll.mockResolvedValue(jobs);
+      mockLlmClientService.runTask.mockImplementation((task: unknown) =>
+        Promise.resolve(
+          task === matchApplicationToJobTask
+            ? aiSuggestions
+            : buildParsedCv({
+                candidateName: "Artem Savchuk",
+                email: "artem@example.com",
+              }),
+        ),
+      );
+      mockAiScreeningService.evaluateCandidate.mockResolvedValue({
+        matchPercentage: 25,
+        recommendation: "reject",
+        summary: "Weak fit",
+        extractedSkills: [],
+      });
+      mockApplicationRepository.findOne.mockResolvedValue(null);
+
+      await service.analyzeEmail([event.id]);
+      return event;
+    };
+
+    const aiWasAskedToMatch = () =>
+      mockLlmClientService.runTask.mock.calls.some(
+        ([task]) => task === matchApplicationToJobTask,
+      );
+
+    it("gives the email parser the titles of the open jobs", async () => {
+      await runWithCv({});
+
+      expect(mockParseApplicationEmailService.parse).toHaveBeenCalledWith(
+        expect.objectContaining({
+          openJobTitles: jobs.map((job) => job.title),
+        }),
+      );
+    });
+
+    it("assigns the job the candidate named, even when AI would pick another one", async () => {
+      const event = await runWithCv({ appliedRole: "UI/UX Designer" }, [
+        {
+          jobId: "marketing",
+          confidence: "medium",
+          reason: "Canva and social banners",
+        },
+      ]);
+
+      expect(aiWasAskedToMatch()).toBe(false);
+      expect(mockApplicationRepository.update).toHaveBeenCalledWith(
+        "application-1",
+        { jobId: "design" },
+      );
+      expect(mockAiScreeningService.evaluateCandidate).toHaveBeenCalledWith(
+        "UI/UX Designer",
+        ["Figma", "User research"],
+        expect.anything(),
+      );
+      expect(event.classificationResult).toMatchObject({
+        jobMatch: { status: "identified", jobId: "design" },
+      });
+    });
+
+    it("keeps a weak candidate on the job they applied for and lets screening score them", async () => {
+      await runWithCv({ appliedRole: "Middle Backend Developer" });
+
+      expect(mockApplicationRepository.update).toHaveBeenCalledWith(
+        "application-1",
+        { jobId: "backend" },
+      );
+      expect(mockApplicationRepository.save).toHaveBeenCalledWith(
+        expect.objectContaining({ jobId: "backend", aiScore: 25 }),
+      );
+    });
+
+    it("assigns a translated role that the parser mapped to an open job", async () => {
+      await runWithCv({
+        appliedRole: "Джуніор фронтенд",
+        appliedJobTitles: ["Junior Frontend Developer (React)"],
+      });
+
+      expect(mockApplicationRepository.update).toHaveBeenCalledWith(
+        "application-1",
+        { jobId: "junior-fe" },
+      );
+    });
+
+    it("leaves an ambiguous application unassigned, lists the options and runs no screening", async () => {
+      const event = await runWithCv({
+        appliedRole: "Фронтенд девелопер",
+        appliedJobTitles: [
+          "Junior Frontend Developer (React)",
+          "Middle Frontend Developer",
+        ],
+      });
+
+      expect(aiWasAskedToMatch()).toBe(false);
+      expect(mockApplicationRepository.update).not.toHaveBeenCalled();
+      expect(mockAiScreeningService.evaluateCandidate).not.toHaveBeenCalled();
+      expect(event.classificationResult).toMatchObject({
+        jobMatch: {
+          status: "ambiguous",
+          jobId: null,
+          candidates: [
+            { id: "junior-fe", title: "Junior Frontend Developer (React)" },
+            { id: "middle-fe", title: "Middle Frontend Developer" },
+          ],
+        },
+      });
+    });
+
+    it("never assigns a job by AI fit when no job is named, but keeps its suggestions", async () => {
+      const event = await runWithCv({ appliedRole: null }, [
+        {
+          jobId: "marketing",
+          confidence: "high",
+          reason: "Strong social media experience",
+        },
+      ]);
+
+      expect(aiWasAskedToMatch()).toBe(true);
+      expect(mockApplicationRepository.update).not.toHaveBeenCalled();
+      expect(mockAiScreeningService.evaluateCandidate).not.toHaveBeenCalled();
+      expect(event.classificationResult).toMatchObject({
+        jobMatch: {
+          status: "none",
+          jobId: null,
+          suggestions: [{ jobId: "marketing", confidence: "high" }],
+        },
+      });
+    });
+
+    it("leaves the application unassigned when the named role is not an open job", async () => {
+      const event = await runWithCv({ appliedRole: "Data Scientist" });
+
+      expect(mockApplicationRepository.update).not.toHaveBeenCalled();
+      expect(event.classificationResult).toMatchObject({
+        jobMatch: { status: "none", jobId: null, candidates: [] },
+      });
+    });
+
+    it("assigns nothing and asks no AI when no jobs are open", async () => {
+      mockJobService.findAll.mockResolvedValue([]);
+      const event = buildEvent([]);
+      mockEventRepository.findBy.mockResolvedValue([event]);
+      mockParseApplicationEmailService.parse.mockResolvedValue(
+        buildAnalysis({ isApplication: true, appliedRole: "QA Engineer" }),
+      );
+
+      await service.analyzeEmail([event.id]);
+
+      expect(aiWasAskedToMatch()).toBe(false);
+      expect(mockApplicationRepository.update).not.toHaveBeenCalled();
+      expect(event.classificationResult).toMatchObject({
+        jobMatch: { status: "none", jobId: null },
+      });
     });
   });
 });
