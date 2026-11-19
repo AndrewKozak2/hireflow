@@ -15,6 +15,8 @@ import { GenerateRejectionLetterService } from "../llm/tasks/generate-rejection-
 import { RecruitmentCost } from "../recruitment-costs/entity/recruitment-cost.entity";
 import { Candidate } from "src/candidate/entities/candidate.entity";
 
+import { ApplicationJobSuggestionsService } from "./application-job-suggestions.service";
+
 @Module({
   imports: [
     TypeOrmModule.forFeature([
@@ -32,7 +34,11 @@ import { Candidate } from "src/candidate/entities/candidate.entity";
     NotificationsModule,
     LlmModule,
   ],
-  providers: [ApplicationsService, GenerateRejectionLetterService],
+  providers: [
+    ApplicationsService,
+    GenerateRejectionLetterService,
+    ApplicationJobSuggestionsService,
+  ],
   controllers: [ApplicationsController],
 })
 export class ApplicationsModule {}

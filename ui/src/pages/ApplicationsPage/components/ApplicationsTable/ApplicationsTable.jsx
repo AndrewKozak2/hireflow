@@ -12,6 +12,7 @@ import {
   Group,
   Avatar,
   Select,
+  Stack,
 } from "@mantine/core";
 import { notifications } from "@mantine/notifications";
 import clsx from "clsx";
@@ -22,6 +23,11 @@ import { ApplicationsService } from "../../../../services/ApplicationsService";
 import { JobsService } from "../../../../services/JobsService";
 import { useInfiniteScroll } from "../../../../hooks/useInfiniteScroll";
 import { assignJobAndRunScreening } from "../../utils/assignJobAndRunScreening";
+import { useJobSuggestions } from "../../../../hooks/useJobSuggestions";
+import {
+  buildAssignJobOptions,
+  suggestionHint,
+} from "../../utils/jobSuggestions";
 
 dayjs.extend(relativeTime);
 
@@ -183,13 +189,15 @@ export const ApplicationsTable = ({
   }, []);
 
   const activeJobOptions = useMemo(
-    () =>
-      activeJobs.map((job) => ({
-        value: job.id,
-        label: job.title,
-      })),
+    () => buildAssignJobOptions(activeJobs, null),
     [activeJobs],
   );
+
+  const unassignedIds = useMemo(
+    () => data.filter((item) => !item.job).map((item) => item.id),
+    [data],
+  );
+  const jobSuggestions = useJobSuggestions(unassignedIds);
 
   const handleAssignJob = useCallback(
     async (applicationId, jobId) => {
@@ -347,9 +355,11 @@ export const ApplicationsTable = ({
           const applicationId = row.original.id;
 
           if (!jobTitle) {
-            return (
+            const suggestion = jobSuggestions[applicationId];
+            const hint = suggestionHint(suggestion);
+            const select = (
               <Select
-                data={activeJobOptions}
+                data={buildAssignJobOptions(activeJobs, suggestion)}
                 placeholder="Assign job"
                 searchable
                 clearable={false}
@@ -360,7 +370,11 @@ export const ApplicationsTable = ({
                 onChange={(jobId) => {
                   if (jobId) handleAssignJob(applicationId, jobId);
                 }}
-                comboboxProps={{ withinPortal: true }}
+                comboboxProps={{
+                  withinPortal: true,
+                  width: 300,
+                  position: "bottom-start",
+                }}
                 nothingFoundMessage="No active jobs"
                 rightSection={
                   assigningApplicationId === applicationId ? (
@@ -368,6 +382,21 @@ export const ApplicationsTable = ({
                   ) : undefined
                 }
               />
+            );
+
+            if (!hint) return select;
+            return (
+              <Stack gap={4}>
+                {select}
+                <Badge
+                  size="xs"
+                  variant="light"
+                  color={suggestion.status === "ambiguous" ? "blue" : "violet"}
+                  style={{ alignSelf: "flex-start" }}
+                >
+                  {hint}
+                </Badge>
+              </Stack>
             );
           }
 
@@ -505,10 +534,12 @@ export const ApplicationsTable = ({
       },
     ],
     [
+      activeJobs,
       activeJobOptions,
       assigningApplicationId,
       handleAssignJob,
       handleMoveToScreening,
+      jobSuggestions,
       navigate,
     ],
   );

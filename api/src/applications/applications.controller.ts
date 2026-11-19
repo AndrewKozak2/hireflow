@@ -44,12 +44,16 @@ import { UpdateApplicationDto } from "./dto/update-application.dto";
 import { MulterFile } from "src/storage/storage.service";
 import { Application } from "./entities/application.entity";
 import { ApplicationComment } from "./entities/application-comment.entity";
+import { ApplicationJobSuggestionsService } from "./application-job-suggestions.service";
 
 @ApiTags("Applications")
 @ApiBearerAuth("access-token")
 @Controller("applications")
 export class ApplicationsController {
-  constructor(private readonly applicationsService: ApplicationsService) {}
+  constructor(
+    private readonly applicationsService: ApplicationsService,
+    private readonly jobSuggestionsService: ApplicationJobSuggestionsService,
+  ) {}
 
   @Post()
   @Roles(UserRole.ADMIN, UserRole.RECRUITER)
@@ -132,6 +136,65 @@ export class ApplicationsController {
     @CurrentUser() user: JwtPayload,
   ) {
     return this.applicationsService.getCounts(query, user);
+  }
+
+  @Get("job-suggestions")
+  @Roles(UserRole.ADMIN, UserRole.RECRUITER)
+  @ApiOperation({
+    summary: "Suggested jobs for applications that have no job yet",
+    description:
+      "For emailed applications left unassigned, returns the open jobs the email could mean, or AI suggestions from the CV, keyed by application ID. Applications that already have a job, or nothing to suggest, are omitted.",
+  })
+  @ApiQuery({
+    name: "ids",
+    required: true,
+    type: String,
+    description: "Comma-separated application IDs",
+    example:
+      "1098fda6-f230-430f-b5ca-6ef352a4b811,d8d12989-a3e4-4ec8-81cb-9ba5a62e7d60",
+  })
+  @ApiOkResponse({
+    description: "Suggestions keyed by application ID",
+    schema: {
+      type: "object",
+      additionalProperties: {
+        type: "object",
+        properties: {
+          applicationId: { type: "string" },
+          status: { type: "string", enum: ["ambiguous", "none"] },
+          appliedRole: { type: "string", nullable: true },
+          options: {
+            type: "array",
+            items: {
+              type: "object",
+              properties: {
+                jobId: { type: "string" },
+                title: { type: "string" },
+                source: { type: "string", enum: ["email", "ai"] },
+                confidence: {
+                  type: "string",
+                  enum: ["high", "medium", "low"],
+                  nullable: true,
+                },
+                reason: { type: "string", nullable: true },
+              },
+            },
+          },
+        },
+      },
+    },
+  })
+  @ApiResponse({ status: 401, description: "Unauthorized" })
+  @ApiResponse({ status: 403, description: "Forbidden" })
+  getJobSuggestions(@Query("ids") ids?: string) {
+    const uuid =
+      /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+    const applicationIds = (ids ?? "")
+      .split(",")
+      .map((id) => id.trim())
+      .filter((id) => uuid.test(id))
+      .slice(0, 100);
+    return this.jobSuggestionsService.getForApplications(applicationIds);
   }
 
   @Get(":id")

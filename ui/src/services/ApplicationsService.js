@@ -12,6 +12,15 @@ export const ApplicationsService = {
 
   getApplication: (id) => apiClient.get(`${BASE_URL}/${id}`),
 
+  /**
+   * Suggested jobs for unassigned applications, keyed by application ID.
+   * @param {string[]} ids
+   */
+  getJobSuggestions: (ids) =>
+    apiClient.get(`${BASE_URL}/job-suggestions`, {
+      params: { ids: ids.join(",") },
+    }),
+
   createApplication: (data) => apiClient.post(BASE_URL, data),
 
   updateApplication: (id, data) => apiClient.patch(`${BASE_URL}/${id}`, data),
