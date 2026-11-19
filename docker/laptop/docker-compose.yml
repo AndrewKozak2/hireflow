@@ -1,0 +1,64 @@
+# Production stack that runs on a laptop and is published through a Cloudflare
+# Tunnel (no open ports, HTTPS from Cloudflare). See docker/laptop/README.md.
+#
+#   HIREFLOW_PROD_CONFIG=~/.config/hireflow-prod \
+#     docker compose -f docker/laptop/docker-compose.yml up -d --build
+#
+# Postgres runs on the host (Postgres.app) and is reached through
+# host.docker.internal. Public routes, configured on the tunnel in Cloudflare:
+#   hireflow.digital       -> http://ui:3000
+#   api.hireflow.digital   -> http://api:3000
+#   files.hireflow.digital -> http://minio:9000  (presigned CV links)
+
+name: hireflow-prod
+
+services:
+  api:
+    build:
+      context: ../..
+      dockerfile: docker/api/Dockerfile
+    image: hireflow-api:prod
+    env_file: ${HIREFLOW_PROD_CONFIG:?Set HIREFLOW_PROD_CONFIG to the folder with api.env and tunnel.env}/api.env
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    ports:
+      # Local access for debugging only; the public route goes through the tunnel.
+      - "127.0.0.1:3100:3000"
+    restart: unless-stopped
+
+  ui:
+    build:
+      context: ../..
+      dockerfile: docker/ui/Dockerfile
+      args:
+        VITE_API_URL: ${HIREFLOW_API_URL:-https://api.hireflow.digital}
+        VITE_SENTRY_ENV: production
+    image: hireflow-ui:prod
+    ports:
+      - "127.0.0.1:8080:3000"
+    restart: unless-stopped
+
+  minio:
+    # Official MinIO images are no longer published, so it is built from source.
+    build:
+      context: ../minio
+    image: hireflow-minio:prod
+    env_file: ${HIREFLOW_PROD_CONFIG}/minio.env
+    volumes:
+      - minio-data:/data
+    restart: unless-stopped
+
+  tunnel:
+    image: cloudflare/cloudflared:2026.11.1
+    command: tunnel --no-autoupdate run
+    env_file: ${HIREFLOW_PROD_CONFIG}/tunnel.env
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    depends_on:
+      - api
+      - ui
+      - minio
+    restart: unless-stopped
+
+volumes:
+  minio-data:

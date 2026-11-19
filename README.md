@@ -90,6 +90,12 @@ npm install
 npm run dev
 ```
 
+### Production
+
+HireFlow runs in production on a laptop behind a Cloudflare Tunnel at
+[hireflow.digital](https://hireflow.digital); merging into `main` deploys
+automatically. Setup and day-to-day commands: [docker/laptop/README.md](docker/laptop/README.md).
+
 ---
 
 ## 👥 The Team
