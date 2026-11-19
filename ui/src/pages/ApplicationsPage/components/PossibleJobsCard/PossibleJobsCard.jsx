@@ -89,7 +89,7 @@ export function PossibleJobsCard({ application, onRefresh }) {
           {suggestion.options.map((option) => (
             <Card key={option.jobId} withBorder radius="sm" p="xs" px="sm">
               <Group justify="space-between" wrap="nowrap" gap="sm">
-                <Stack gap={2} style={{ minWidth: 0 }}>
+                <Stack gap={2} style={{ flex: 1, minWidth: 0 }}>
                   <Group gap="xs" wrap="nowrap">
                     <Text size="sm" fw={500} truncate>
                       {option.title}
@@ -98,6 +98,7 @@ export function PossibleJobsCard({ application, onRefresh }) {
                       size="xs"
                       variant="light"
                       color={option.source === "email" ? "blue" : "violet"}
+                      style={{ flexShrink: 0 }}
                     >
                       {optionBadge(option)}
                     </Badge>
@@ -111,6 +112,8 @@ export function PossibleJobsCard({ application, onRefresh }) {
                 <Button
                   size="xs"
                   variant="light"
+                  // Long AI reasons must never squeeze the button
+                  style={{ flexShrink: 0 }}
                   loading={assigningJobId === option.jobId}
                   disabled={
                     assigningJobId !== null && assigningJobId !== option.jobId
