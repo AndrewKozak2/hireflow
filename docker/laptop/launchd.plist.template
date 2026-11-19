@@ -1,0 +1,38 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  launchd agent that runs docker/laptop/deploy.sh every 5 minutes, so merging
+  into main updates the laptop production stack. Install it with the commands
+  in docker/laptop/README.md, which replace __PROD_REPO__ and __PROD_CONFIG__
+  with absolute paths.
+-->
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+  <key>Label</key>
+  <string>digital.hireflow.deploy</string>
+
+  <key>ProgramArguments</key>
+  <array>
+    <string>/bin/bash</string>
+    <string>__PROD_REPO__/docker/laptop/deploy.sh</string>
+  </array>
+
+  <key>EnvironmentVariables</key>
+  <dict>
+    <key>HIREFLOW_PROD_CONFIG</key>
+    <string>__PROD_CONFIG__</string>
+  </dict>
+
+  <key>StartInterval</key>
+  <integer>300</integer>
+
+  <key>RunAtLoad</key>
+  <true/>
+
+  <key>StandardOutPath</key>
+  <string>__PROD_CONFIG__/deploy.log</string>
+
+  <key>StandardErrorPath</key>
+  <string>__PROD_CONFIG__/deploy.log</string>
+</dict>
+</plist>

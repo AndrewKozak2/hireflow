@@ -81,3 +81,18 @@ jobs:
 
       - name: Build
         run: npm run build
+
+  docker:
+    name: Docker images
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v7
+
+      # The laptop production stack builds these on every deploy; catch a broken
+      # Dockerfile here instead of on the production machine.
+      - name: Build API image
+        run: docker build -f docker/api/Dockerfile -t hireflow-api:ci .
+
+      - name: Build UI image
+        run: docker build -f docker/ui/Dockerfile --build-arg VITE_API_URL=https://api.example.com -t hireflow-ui:ci .

@@ -1,0 +1,15 @@
+# Used by docker/api/Dockerfile (build context = repository root).
+# Keep secrets and host-built dependencies out of the image.
+**/node_modules
+**/dist
+**/.env
+**/.env.*
+!**/.env.example
+**/coverage
+.git
+.github
+.claude
+.husky
+apps-scripts
+ui
+docker
