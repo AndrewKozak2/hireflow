@@ -1,4 +1,7 @@
-import { buildCandidateUpdateFromCv } from "./candidate-cv-enrichment.utils";
+import {
+  buildCandidateUpdateFromCv,
+  uniqueSkills,
+} from "./candidate-cv-enrichment.utils";
 
 describe("buildCandidateUpdateFromCv", () => {
   const emptyCandidate = { skills: [], phone: "", linkedinUrl: "" };
@@ -27,6 +30,29 @@ describe("buildCandidateUpdateFromCv", () => {
     );
 
     expect(update.skills).toEqual(["React", "Git", "REST API"]);
+  });
+
+  it("treats skills that differ only in case as the same skill", () => {
+    const update = buildCandidateUpdateFromCv(
+      emptyCandidate,
+      cv({ skills: ["Employer branding", "UTM tracking"] }),
+      ["Employer Branding", "UTM Tracking", "Paid Campaign Management"],
+    );
+
+    expect(update.skills).toEqual([
+      "Employer branding",
+      "UTM tracking",
+      "Paid Campaign Management",
+    ]);
+  });
+
+  it("cleans up repeats a profile already has", () => {
+    const update = buildCandidateUpdateFromCv(
+      { ...emptyCandidate, skills: ["Figma", "figma", "Canva"] },
+      cv({ skills: ["Canva"] }),
+    );
+
+    expect(update.skills).toEqual(["Figma", "Canva"]);
   });
 
   it("returns nothing to save when the CV adds nothing new", () => {
@@ -67,5 +93,14 @@ describe("buildCandidateUpdateFromCv", () => {
     ).toEqual({
       skills: ["Python"],
     });
+  });
+});
+
+describe("uniqueSkills", () => {
+  it("trims, drops empty values and keeps the first spelling", () => {
+    expect(uniqueSkills([" React ", "react", "", null, "REST API"])).toEqual([
+      "React",
+      "REST API",
+    ]);
   });
 });
