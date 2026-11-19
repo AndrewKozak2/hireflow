@@ -12,6 +12,7 @@ import { UpdateCandidateDto } from "./dto/update-candidate.dto";
 import { CandidateQueryDto } from "./dto/candidate-query.dto";
 import { StorageService } from "../storage/storage.service";
 import { decodeUploadedFilename } from "../shared/utils/filename.utils";
+import { uniqueSkills } from "../shared/utils/candidate-cv-enrichment.utils";
 
 export interface FileUpload {
   originalname: string;
@@ -109,7 +110,7 @@ export class CandidateService {
 
   async updateSkills(id: string, skillNames: string[]) {
     const candidate = await this.findOne(id);
-    candidate.skills = skillNames;
+    candidate.skills = uniqueSkills(skillNames);
     return this.candidateRepository.save(candidate);
   }
 
