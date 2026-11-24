@@ -24,6 +24,15 @@ export function PossibleJobsCard({ application, onRefresh }) {
   const suggestions = useJobSuggestions(isUnassigned ? [application.id] : []);
   const suggestion = isUnassigned ? suggestions[application.id] : null;
   const [assigningJobId, setAssigningJobId] = useState(null);
+  const [expandedJobIds, setExpandedJobIds] = useState(() => new Set());
+
+  const toggleReason = (jobId) =>
+    setExpandedJobIds((current) => {
+      const next = new Set(current);
+      if (next.has(jobId)) next.delete(jobId);
+      else next.add(jobId);
+      return next;
+    });
 
   if (!suggestion || suggestion.options.length === 0) return null;
 
@@ -104,7 +113,30 @@ export function PossibleJobsCard({ application, onRefresh }) {
                     </Badge>
                   </Group>
                   {option.reason && (
-                    <Text size="xs" c="dimmed" lineClamp={2}>
+                    // The reason is clamped to two lines; a click shows all of it
+                    <Text
+                      size="xs"
+                      c="dimmed"
+                      lineClamp={
+                        expandedJobIds.has(option.jobId) ? undefined : 2
+                      }
+                      role="button"
+                      tabIndex={0}
+                      aria-expanded={expandedJobIds.has(option.jobId)}
+                      title={
+                        expandedJobIds.has(option.jobId)
+                          ? "Click to collapse"
+                          : "Click to read the full reason"
+                      }
+                      style={{ cursor: "pointer" }}
+                      onClick={() => toggleReason(option.jobId)}
+                      onKeyDown={(event) => {
+                        if (event.key === "Enter" || event.key === " ") {
+                          event.preventDefault();
+                          toggleReason(option.jobId);
+                        }
+                      }}
+                    >
                       {option.reason}
                     </Text>
                   )}
