@@ -91,6 +91,37 @@ describe("PossibleJobsCard", () => {
     await waitFor(() => expect(onRefresh).toHaveBeenCalledTimes(2));
   });
 
+  it("expands and collapses an AI reason on click", async () => {
+    const reason =
+      "Strong NestJS and PostgreSQL experience. However, the role asks for 3+ years and the candidate has 2.5.";
+    ApplicationsService.getJobSuggestions.mockResolvedValue({
+      "app-1": {
+        applicationId: "app-1",
+        status: "none",
+        appliedRole: null,
+        options: [
+          {
+            jobId: "middle-be",
+            title: "Middle Backend Developer",
+            source: "ai",
+            confidence: "medium",
+            reason,
+          },
+        ],
+      },
+    });
+    renderCard({ id: "app-1", jobId: null });
+
+    const reasonText = await screen.findByText(reason);
+    expect(reasonText).toHaveAttribute("aria-expanded", "false");
+
+    await userEvent.click(reasonText);
+    expect(reasonText).toHaveAttribute("aria-expanded", "true");
+
+    await userEvent.click(reasonText);
+    expect(reasonText).toHaveAttribute("aria-expanded", "false");
+  });
+
   it("shows nothing for an application that already has a job", async () => {
     renderCard({ id: "app-1", jobId: "qa" });
 
