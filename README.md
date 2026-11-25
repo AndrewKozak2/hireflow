@@ -98,10 +98,6 @@ automatically. Setup and day-to-day commands: [docker/laptop/README.md](docker/l
 
 ---
 
-## 👥 The Team
-
-HireFlow was built by a team of junior developers at **SixAcademy**, focusing on building real-world products with professional engineering standards. This repository is my copy of the project.
-
 ### My contributions
 
 - **Access control** — JWT strategy, `RolesGuard`, `@Roles` / `@CurrentUser` decorators, role-aware navigation and protected routes
