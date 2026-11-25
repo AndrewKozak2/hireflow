@@ -4,7 +4,7 @@
 
 **Automating the hiring journey from request to offer.**
 
-HireFlow is a comprehensive recruiting platform designed to replace fragmented spreadsheets and manual workflows with a streamlined, automated system. Built by the SixAcademy student team, it empowers recruiters to manage vacancies, track candidate pipelines, and collaborate with hiring managers—all in one place.
+HireFlow is a comprehensive recruiting platform designed to replace fragmented spreadsheets and manual workflows with a streamlined, automated system. It empowers recruiters to manage vacancies, track candidate pipelines, and collaborate with hiring managers—all in one place.
 
 ---
 
